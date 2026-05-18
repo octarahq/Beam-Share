@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Beam Share</string>
+    <string name="status_initializing">Status: Initializing...</string>
+    <string name="status_advertising">Status: Advertising as %1$s</string>
+    <string name="status_failed">Status: Registration Failed (%1$d)</string>
+    <string name="discovered_devices">Discovered Devices:</string>
+    <string name="hint_message">Type a message</string>
+    <string name="btn_send">Send Message</string>
+    <string name="btn_pick_file">Pick &amp; Send File</string>
+    <string name="response_placeholder">Status will appear here</string>
+    <string name="connecting">Connecting to %1$s...</string>
+    <string name="message_sent">Message sent!</string>
+    <string name="error_connecting">Error: %1$s</string>
+    <string name="selected_device">Selected: %1$s</string>
+    <string name="server_response">Server: %1$s</string>
+    <string name="device_lost">Selected device lost.</string>
+    <string name="waiting_consent">Waiting for consent...</string>
+    <string name="transfer_rejected">Transfer rejected by receiver.</string>
+    <string name="transfer_started">Transfer started...</string>
+    <string name="transfer_complete">Transfer complete!</string>
+    <string name="no_file_selected">No file selected.</string>
+</resources>
