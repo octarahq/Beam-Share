@@ -24,6 +24,7 @@ class NsdHelper private constructor(context: Context) {
     private val nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
     private val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
     private val settingsManager = SettingsManager(context)
+    private val appContext = context.applicationContext
     
     private var multicastLock: WifiManager.MulticastLock? = null
     private val _discoveredDevices = MutableStateFlow<List<BeamDevice>>(emptyList())
@@ -73,7 +74,7 @@ class NsdHelper private constructor(context: Context) {
                 
                 _localDevice.value = BeamDevice(
                     id = CryptoManager.getPublicKeyHex(),
-                    name = info.serviceName + " (Moi)",
+                    name = "${info.serviceName} ${appContext.getString(R.string.me_label)}",
                     host = "127.0.0.1",
                     port = currentRegisteredPort ?: info.port,
                     model = Build.MODEL

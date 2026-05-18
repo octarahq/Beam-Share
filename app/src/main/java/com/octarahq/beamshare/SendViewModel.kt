@@ -27,6 +27,7 @@ data class DeviceTransferState(
 class SendViewModel(application: Application) : AndroidViewModel(application) {
     private val nsdHelper = NsdHelper.getInstance(application)
     private val transferService = TransferService(application)
+    private val appContext = application.applicationContext
     
     val devices = combine(nsdHelper.discoveredDevices, nsdHelper.localDevice) { discovered, local ->
         if (local != null) {
@@ -67,7 +68,7 @@ class SendViewModel(application: Application) : AndroidViewModel(application) {
         activeJobs.remove(deviceName)
         transferStates[deviceName] = DeviceTransferState(
             isTransferring = false,
-            finishedMessage = "Annulé",
+            finishedMessage = appContext.getString(R.string.status_cancelled),
             isError = true
         )
     }
@@ -77,7 +78,7 @@ class SendViewModel(application: Application) : AndroidViewModel(application) {
         val job = viewModelScope.launch {
             try {
                 transferStates[device.name] = DeviceTransferState(
-                    status = "Préparation...",
+                    status = appContext.getString(R.string.status_preparing),
                     progress = -1f,
                     isTransferring = true,
                     verificationCode = myId
@@ -100,14 +101,14 @@ class SendViewModel(application: Application) : AndroidViewModel(application) {
 
                 transferStates[device.name] = DeviceTransferState(
                     isTransferring = false,
-                    finishedMessage = "Transfert fini ($formattedTime)",
+                    finishedMessage = appContext.getString(R.string.status_finished_time, formattedTime),
                     verificationCode = myId
                 )
             } catch (e: Exception) {
                 if (activeJobs.containsKey(device.name)) {
                     transferStates[device.name] = DeviceTransferState(
                         isTransferring = false,
-                        finishedMessage = "Erreur: ${e.message}",
+                        finishedMessage = appContext.getString(R.string.status_error, e.message),
                         isError = true,
                         verificationCode = myId
                     )

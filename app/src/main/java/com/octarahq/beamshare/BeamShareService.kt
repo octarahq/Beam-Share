@@ -93,32 +93,32 @@ class BeamShareService : Service() {
         val method = settingsManager.transferMethod
 
         val modeText = when (mode) {
-            VisibilityMode.TRUSTED -> "Appareils de confiance"
-            VisibilityMode.EVERYONE_TEMP, VisibilityMode.EVERYONE_ALWAYS -> "Tout le monde"
-            else -> "Inactif"
+            VisibilityMode.TRUSTED -> getString(R.string.visible_to_trusted)
+            VisibilityMode.EVERYONE_TEMP, VisibilityMode.EVERYONE_ALWAYS -> getString(R.string.everyone)
+            else -> getString(R.string.disabled)
         }
 
         val methodText = if (method == TransferMethod.AUTO) {
-            val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+            val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
             val network = cm.activeNetwork
             val caps = cm.getNetworkCapabilities(network)
             if (caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true) {
-                "Wi-Fi local (Auto)"
+                getString(R.string.method_auto_wifi)
             } else {
-                "Wi-Fi Direct (Auto)"
+                getString(R.string.method_auto_direct)
             }
         } else {
             when (method) {
-                TransferMethod.WIFI_LOCAL_ONLY -> "Wi-Fi local"
-                TransferMethod.BLUETOOTH_CLASSIC -> "Bluetooth Classic"
-                TransferMethod.WIFI_DIRECT_HYBRID -> "Wi-Fi Direct Hybride"
+                TransferMethod.WIFI_LOCAL_ONLY -> getString(R.string.method_wifi_local)
+                TransferMethod.BLUETOOTH_CLASSIC -> getString(R.string.method_bluetooth)
+                TransferMethod.WIFI_DIRECT_HYBRID -> getString(R.string.method_wifi_direct)
                 else -> "Inconnu"
             }
         }
 
         return NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Beam Share est actif")
-            .setContentText("Mode : $methodText • Visibilité : $modeText")
+            .setContentTitle(getString(R.string.service_active))
+            .setContentText(getString(R.string.service_content, methodText, modeText))
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
@@ -322,8 +322,8 @@ class BeamShareService : Service() {
         )
 
         val notificationBuilder = NotificationCompat.Builder(this, transferChannelId)
-            .setContentTitle("Demande de transfert")
-            .setContentText("$sender veut vous envoyer un fichier")
+            .setContentTitle(getString(R.string.notif_transfer_request))
+            .setContentText(getString(R.string.notif_wants_to_send, sender))
             .setSubText(fileName)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -333,13 +333,13 @@ class BeamShareService : Service() {
             .setAutoCancel(true)
             .setOngoing(true)
             .setStyle(NotificationCompat.BigTextStyle().bigText(
-                "Expéditeur : $sender\nFichier : $fileName"
+                getString(R.string.notif_sender_file, sender, fileName)
             ))
-            .addAction(android.R.drawable.ic_input_add, "Accepter", acceptPending)
-            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Refuser", declinePending)
+            .addAction(android.R.drawable.ic_input_add, getString(R.string.accept), acceptPending)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, getString(R.string.refuse), declinePending)
 
         if (!isTrusted) {
-            notificationBuilder.addAction(android.R.drawable.ic_lock_lock, "Bloquer", blockPending)
+            notificationBuilder.addAction(android.R.drawable.ic_lock_lock, getString(R.string.block), blockPending)
         } else {
             notificationBuilder.setFullScreenIntent(pendingIntent, true)
         }
@@ -355,8 +355,8 @@ class BeamShareService : Service() {
         val pendingIntent = PendingIntent.getActivity(this, notificationId, intent, PendingIntent.FLAG_IMMUTABLE)
 
         val notification = NotificationCompat.Builder(this, transferChannelId)
-            .setContentTitle("Réception de $fileName")
-            .setContentText("Depuis $sender")
+            .setContentTitle(getString(R.string.notif_receiving, fileName))
+            .setContentText(getString(R.string.notif_from_sender, sender))
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setProgress(100, (progress * 100).toInt(), false)
@@ -373,8 +373,8 @@ class BeamShareService : Service() {
 
         if (!success) {
             val notification = NotificationCompat.Builder(this, transferChannelId)
-                .setContentTitle("Échec du transfert")
-                .setContentText("Le fichier $fileName n'a pas pu être reçu de $sender.")
+                .setContentTitle(getString(R.string.transfer_failed))
+                .setContentText(getString(R.string.notif_failed_desc, fileName, sender))
                 .setSmallIcon(android.R.drawable.stat_notify_error)
                 .setAutoCancel(true)
                 .build()
@@ -388,8 +388,8 @@ class BeamShareService : Service() {
         val pendingIntent = PendingIntent.getActivity(this, notificationId, intent, PendingIntent.FLAG_IMMUTABLE)
 
         val notification = NotificationCompat.Builder(this, transferChannelId)
-            .setContentTitle("Transfert terminé")
-            .setContentText("$fileName reçu de $sender.")
+            .setContentTitle(getString(R.string.transfer_completed))
+            .setContentText(getString(R.string.notif_completed_desc, fileName, sender))
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)

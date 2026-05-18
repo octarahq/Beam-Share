@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -308,7 +309,7 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
     if (showNameEditor) {
         AlertDialog(
             onDismissRequest = { showNameEditor = false },
-            title = { Text("Nom de l'appareil") },
+            title = { Text(stringResource(R.string.device_name)) },
             text = {
                 TextField(
                     value = tempName,
@@ -321,10 +322,10 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
                 Button(onClick = {
                     viewModel.updateDeviceName(tempName)
                     showNameEditor = false
-                }) { Text("Enregistrer") }
+                }) { Text(stringResource(R.string.save)) }
             },
             dismissButton = {
-                TextButton(onClick = { showNameEditor = false }) { Text("Annuler") }
+                TextButton(onClick = { showNameEditor = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -374,7 +375,7 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
             Spacer(Modifier.width(8.dp))
             Icon(
                 Icons.Default.Edit,
-                contentDescription = "Modifier",
+                contentDescription = stringResource(R.string.modify),
                 modifier = Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.outline
             )
@@ -402,12 +403,12 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
                 }
                 Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Visibilité", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.visibility), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         text = when(visibilityMode) {
-                            VisibilityMode.DISABLED -> "Désactivé"
-                            VisibilityMode.TRUSTED -> "Appareils de confiance"
-                            else -> "Visible par tout le monde"
+                            VisibilityMode.DISABLED -> stringResource(R.string.disabled)
+                            VisibilityMode.TRUSTED -> stringResource(R.string.visible_to_trusted)
+                            else -> stringResource(R.string.visible_to_everyone)
                         },
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium
@@ -427,38 +428,38 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
             Column {
                 SettingsItem(
                     icon = Icons.Default.Folder,
-                    title = "Emplacement de téléchargement",
+                    title = stringResource(R.string.download_location),
                     subtitle = downloadPath,
                     onClick = { folderPickerLauncher.launch(null) }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 SettingsItem(
                     icon = if (isSystemInDarkTheme()) Icons.Default.DarkMode else Icons.Default.LightMode,
-                    title = "Apparence",
+                    title = stringResource(R.string.appearance),
                     subtitle = when(themeMode) {
-                        ThemeMode.LIGHT -> "Clair"
-                        ThemeMode.DARK -> "Sombre"
-                        ThemeMode.SYSTEM -> "Système"
+                        ThemeMode.LIGHT -> stringResource(R.string.theme_light)
+                        ThemeMode.DARK -> stringResource(R.string.theme_dark)
+                        ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
                     },
                     onClick = { showThemeSelector = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 SettingsItem(
                     icon = Icons.Default.Wifi,
-                    title = "Préférences de données",
+                    title = stringResource(R.string.data_preferences),
                     subtitle = when(transferMethod) {
-                        TransferMethod.WIFI_LOCAL_ONLY -> "Wi-Fi local uniquement"
-                        TransferMethod.BLUETOOTH_CLASSIC -> "Bluetooth Classic"
-                        TransferMethod.WIFI_DIRECT_HYBRID -> "Wi-Fi Direct Hybride"
-                        TransferMethod.AUTO -> "Automatique"
+                        TransferMethod.WIFI_LOCAL_ONLY -> stringResource(R.string.method_wifi_local)
+                        TransferMethod.BLUETOOTH_CLASSIC -> stringResource(R.string.method_bluetooth)
+                        TransferMethod.WIFI_DIRECT_HYBRID -> stringResource(R.string.method_wifi_direct)
+                        TransferMethod.AUTO -> stringResource(R.string.method_auto)
                     },
                     onClick = { showTransferMethodSelector = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 SettingsItem(
                     icon = Icons.Default.Notifications,
-                    title = "Notifications",
-                    subtitle = "Gérer les alertes",
+                    title = stringResource(R.string.notifications),
+                    subtitle = stringResource(R.string.manage_alerts),
                     onClick = {
                         val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                             Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
@@ -488,19 +489,19 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
             Column {
                 SettingsItem(
                     icon = Icons.Default.History,
-                    title = "Historique des transferts",
+                    title = stringResource(R.string.transfer_history),
                     onClick = { onNavigate("history") }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 SettingsItem(
                     icon = Icons.Default.Group,
-                    title = "Appareils de confiance",
+                    title = stringResource(R.string.title_trusted_devices),
                     onClick = { onNavigate("trusted") }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 SettingsItem(
                     icon = Icons.Default.Block,
-                    title = "Liste noire",
+                    title = stringResource(R.string.title_blacklist),
                     onClick = { onNavigate("blacklist") }
                 )
             }
@@ -510,7 +511,7 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
 
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "BEAM SHARE",
+                text = stringResource(R.string.app_name).uppercase(),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold,
@@ -525,7 +526,7 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
                 Column {
                     SettingsItem(
                         icon = Icons.Default.Security,
-                        title = "Gérer les autorisations",
+                        title = stringResource(R.string.manage_permissions),
                         onClick = {
                             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                                 data = Uri.fromParts("package", context.packageName, null)
@@ -536,13 +537,13 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                     SettingsItem(
                         icon = Icons.Default.Info,
-                        title = "À propos de Beam Share",
+                        title = stringResource(R.string.about_beam_share),
                         onClick = { onNavigate("about") }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                     SettingsItem(
                         icon = Icons.Default.Policy,
-                        title = "Politique de confidentialité",
+                        title = stringResource(R.string.privacy_policy),
                         onClick = { }
                     )
                 }
@@ -551,7 +552,7 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
 
         Spacer(Modifier.height(32.dp))
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.alpha(0.4f)) {
-            Text(text = "Beam Share v$APP_VERSION", style = MaterialTheme.typography.labelSmall)
+            Text(text = "${stringResource(R.string.app_name)} v$APP_VERSION", style = MaterialTheme.typography.labelSmall)
             Text(text = "Powered by Octara", style = MaterialTheme.typography.labelSmall)
         }
         Spacer(Modifier.height(48.dp))
@@ -566,23 +567,23 @@ fun ThemeSelectorDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Apparence") },
+        title = { Text(stringResource(R.string.appearance)) },
         text = {
             Column {
                 ThemeOption(
-                    title = "Système",
+                    title = stringResource(R.string.theme_system),
                     icon = Icons.Default.SettingsSuggest,
                     selected = currentMode == ThemeMode.SYSTEM,
                     onClick = { onSelect(ThemeMode.SYSTEM) }
                 )
                 ThemeOption(
-                    title = "Clair",
+                    title = stringResource(R.string.theme_light),
                     icon = Icons.Default.LightMode,
                     selected = currentMode == ThemeMode.LIGHT,
                     onClick = { onSelect(ThemeMode.LIGHT) }
                 )
                 ThemeOption(
-                    title = "Sombre",
+                    title = stringResource(R.string.theme_dark),
                     icon = Icons.Default.DarkMode,
                     selected = currentMode == ThemeMode.DARK,
                     onClick = { onSelect(ThemeMode.DARK) }
@@ -590,7 +591,7 @@ fun ThemeSelectorDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Fermer") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
         }
     )
 }
@@ -635,37 +636,37 @@ fun TransferMethodDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Méthode de transfert") },
+        title = { Text(stringResource(R.string.data_preferences)) },
         text = {
             Column {
                 TransferMethodOption(
                     method = TransferMethod.AUTO,
-                    title = "Automatique",
-                    subtitle = "Alterne intelligemment selon la connexion",
+                    title = stringResource(R.string.method_auto),
+                    subtitle = stringResource(R.string.temp_everyone_desc),
                     icon = Icons.Default.AutoMode,
                     selected = currentMethod == TransferMethod.AUTO,
                     onClick = { onSelect(TransferMethod.AUTO) }
                 )
                 TransferMethodOption(
                     method = TransferMethod.WIFI_LOCAL_ONLY,
-                    title = "Wi-Fi local",
-                    subtitle = "Réseau Wi-Fi commun (mDNS + Sockets)",
+                    title = stringResource(R.string.method_wifi_local),
+                    subtitle = "mDNS + Sockets",
                     icon = Icons.Default.Wifi,
                     selected = currentMethod == TransferMethod.WIFI_LOCAL_ONLY,
                     onClick = { onSelect(TransferMethod.WIFI_LOCAL_ONLY) }
                 )
                 TransferMethodOption(
                     method = TransferMethod.WIFI_DIRECT_HYBRID,
-                    title = "Wi-Fi Direct Hybride",
-                    subtitle = "Connexion directe haute vitesse (4G/Extérieur)",
+                    title = stringResource(R.string.method_wifi_direct),
+                    subtitle = stringResource(R.string.ready_to_send),
                     icon = Icons.Default.SwapCalls,
                     selected = currentMethod == TransferMethod.WIFI_DIRECT_HYBRID,
                     onClick = { onSelect(TransferMethod.WIFI_DIRECT_HYBRID) }
                 )
                 TransferMethodOption(
                     method = TransferMethod.BLUETOOTH_CLASSIC,
-                    title = "Bluetooth Classic",
-                    subtitle = "Petits fichiers et texte (RFCOMM)",
+                    title = stringResource(R.string.method_bluetooth),
+                    subtitle = "RFCOMM",
                     icon = Icons.Default.Bluetooth,
                     selected = currentMethod == TransferMethod.BLUETOOTH_CLASSIC,
                     onClick = { onSelect(TransferMethod.BLUETOOTH_CLASSIC) }
@@ -673,7 +674,7 @@ fun TransferMethodDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Fermer") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
         }
     )
 }
@@ -737,7 +738,7 @@ fun SettingsItem(icon: ImageVector, title: String, subtitle: String? = null, onC
             }
         }
         Icon(
-            imageVector = if (subtitle == "Gérer les alertes" || title == "Gérer les autorisations") Icons.AutoMirrored.Filled.OpenInNew else Icons.Default.ChevronRight,
+            imageVector = if (subtitle == stringResource(R.string.manage_alerts) || title == stringResource(R.string.manage_permissions)) Icons.AutoMirrored.Filled.OpenInNew else Icons.Default.ChevronRight,
             contentDescription = null, 
             modifier = Modifier.size(20.dp), 
             tint = MaterialTheme.colorScheme.outline
@@ -753,12 +754,12 @@ fun TrustedDevicesScreen(settingsManager: SettingsManager, onBack: () -> Unit) {
         Spacer(Modifier.height(16.dp))
         if (trustedMap.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Aucun appareil de confiance", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.no_trusted_devices), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             LazyColumn {
                 items(trustedMap.keys.toList()) { id ->
-                    val name = trustedMap[id] ?: "Nom inconnu"
+                    val name = trustedMap[id] ?: stringResource(R.string.unknown_name)
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -767,7 +768,7 @@ fun TrustedDevicesScreen(settingsManager: SettingsManager, onBack: () -> Unit) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                             Text("ID: ${id.take(12)}...", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Code: ${CryptoManager.calculateVerificationCode(id.decodeHex())}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                            Text("${stringResource(R.string.verification_code_label)} ${CryptoManager.calculateVerificationCode(id.decodeHex())}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                         }
                         IconButton(onClick = {
                             settingsManager.removeTrustedDevice(id)
@@ -791,7 +792,7 @@ fun BlacklistScreen(settingsManager: SettingsManager, onBack: () -> Unit) {
         Spacer(Modifier.height(16.dp))
         if (blacklistedDevices.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("La liste noire est vide", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.blacklist_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             LazyColumn {
@@ -824,7 +825,7 @@ fun HistoryScreen(settingsManager: SettingsManager, onBack: () -> Unit) {
         Spacer(Modifier.height(16.dp))
         if (history.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Aucun transfert récent", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.no_recent_transfers), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             LazyColumn {
@@ -850,13 +851,13 @@ fun HistoryScreen(settingsManager: SettingsManager, onBack: () -> Unit) {
                         Column(Modifier.weight(1f)) {
                             Text(item.fileName, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
-                                "${if (item.isIncoming) "De" else "Vers"} ${item.deviceName}",
+                                "${if (item.isIncoming) stringResource(R.string.from) else stringResource(R.string.to)} ${item.deviceName}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Text(
-                            if (item.success) "OK" else "Échec",
+                            if (item.success) stringResource(R.string.success) else stringResource(R.string.failed),
                             color = if (item.success) Color(0xFF2E7D32) else Color.Red,
                             style = MaterialTheme.typography.labelSmall
                         )
@@ -893,14 +894,14 @@ fun AboutScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(24.dp))
             
             Text(
-                text = "Beam Share",
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
             
             Text(
-                text = "Transfert de fichiers décentralisé",
+                text = stringResource(R.string.app_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -913,7 +914,7 @@ fun AboutScreen(onBack: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Version $APP_VERSION",
+                text = "${stringResource(R.string.title_about)} $APP_VERSION",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.outline
             )
@@ -930,19 +931,19 @@ fun AboutScreen(onBack: () -> Unit) {
 @Composable
 fun TopBar(showBack: Boolean, currentSubScreen: String?, onBack: () -> Unit, onSettings: () -> Unit) {
     val title = when {
-        currentSubScreen == "trusted" -> "Appareils de confiance"
-        currentSubScreen == "history" -> "Historique"
-        currentSubScreen == "blacklist" -> "Liste noire"
-        currentSubScreen == "about" -> "À propos"
-        showBack -> "Settings"
-        else -> "Beam Share"
+        currentSubScreen == "trusted" -> stringResource(R.string.title_trusted_devices)
+        currentSubScreen == "history" -> stringResource(R.string.title_history)
+        currentSubScreen == "blacklist" -> stringResource(R.string.title_blacklist)
+        currentSubScreen == "about" -> stringResource(R.string.title_about)
+        showBack -> stringResource(R.string.title_settings)
+        else -> stringResource(R.string.app_name)
     }
 
     CenterAlignedTopAppBar(
         navigationIcon = {
             if (showBack) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cancel), tint = MaterialTheme.colorScheme.primary)
                 }
             } else {
                 Icon(
@@ -966,7 +967,7 @@ fun TopBar(showBack: Boolean, currentSubScreen: String?, onBack: () -> Unit, onS
         actions = {
             if (!showBack) {
                 IconButton(onClick = onSettings) {
-                    Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.title_settings))
                 }
             } else if (currentSubScreen == "history") {
                 val context = LocalContext.current
@@ -997,13 +998,13 @@ fun BottomNavBar(currentTab: String, onTabSelected: (String) -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             NavItem(
-                label = "Receive",
+                label = stringResource(R.string.tab_receive),
                 icon = Icons.Outlined.Download,
                 selected = currentTab == "receive",
                 onClick = { onTabSelected("receive") }
             )
             NavItem(
-                label = "Send",
+                label = stringResource(R.string.tab_send),
                 icon = Icons.Outlined.Upload,
                 selected = currentTab == "send",
                 onClick = { onTabSelected("send") }
@@ -1075,16 +1076,13 @@ fun ReceiveScreen(viewModel: ReceiveViewModel = viewModel()) {
         }
 
         Text(
-            text = if (visibilityMode == VisibilityMode.DISABLED) "Receiving Disabled" else "Ready to Receive",
+            text = if (visibilityMode == VisibilityMode.DISABLED) stringResource(R.string.receiving_disabled) else stringResource(R.string.ready_to_receive),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.SemiBold
         )
         
         Text(
-            text = buildString {
-                append("Visible as ")
-                append(deviceName)
-            },
+            text = stringResource(R.string.visible_as, deviceName),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -1093,7 +1091,7 @@ fun ReceiveScreen(viewModel: ReceiveViewModel = viewModel()) {
 
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "VISIBILITY SETTINGS",
+                text = stringResource(R.string.visibility_settings_header),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 letterSpacing = 1.sp
@@ -1106,24 +1104,24 @@ fun ReceiveScreen(viewModel: ReceiveViewModel = viewModel()) {
             ) {
                 Column {
                     VisibilityOption(
-                        title = "Désactiver",
-                        subtitle = "Hidden from everyone",
+                        title = stringResource(R.string.disable_visibility),
+                        subtitle = stringResource(R.string.hidden_from_everyone),
                         icon = Icons.Default.VisibilityOff,
                         selected = visibilityMode == VisibilityMode.DISABLED,
                         onClick = { viewModel.setVisibilityMode(VisibilityMode.DISABLED) }
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
                     VisibilityOption(
-                        title = "Appareils de confiance",
-                        subtitle = "Only your trusted devices",
+                        title = stringResource(R.string.visible_to_trusted),
+                        subtitle = stringResource(R.string.only_trusted_desc),
                         icon = Icons.Default.Group,
                         selected = visibilityMode == VisibilityMode.TRUSTED,
                         onClick = { viewModel.setVisibilityMode(VisibilityMode.TRUSTED) }
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
                     VisibilityOption(
-                        title = if (remainingSeconds > 0) "Tout le monde (${remainingSeconds / 60}:${"%02d".format(remainingSeconds % 60)})" else "Tout le monde ($everyoneTimeout min)",
-                        subtitle = "Temporary discovery mode",
+                        title = if (remainingSeconds > 0) "${stringResource(R.string.everyone)} (${remainingSeconds / 60}:${"%02d".format(remainingSeconds % 60)})" else "${stringResource(R.string.everyone)} ($everyoneTimeout ${stringResource(R.string.min)})",
+                        subtitle = stringResource(R.string.temp_everyone_desc),
                         icon = Icons.Default.Public,
                         selected = visibilityMode == VisibilityMode.EVERYONE_TEMP,
                         onClick = { viewModel.setVisibilityMode(VisibilityMode.EVERYONE_TEMP) }
@@ -1137,10 +1135,10 @@ fun ReceiveScreen(viewModel: ReceiveViewModel = viewModel()) {
                                 onClick = { viewModel.adjustTimeout(-1) },
                                 modifier = Modifier.size(32.dp)
                             ) {
-                                Icon(Icons.Default.Remove, contentDescription = "Moins", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Default.Remove, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                             }
                             Text(
-                                text = "$everyoneTimeout min",
+                                text = "$everyoneTimeout ${stringResource(R.string.min)}",
                                 style = MaterialTheme.typography.labelLarge,
                                 modifier = Modifier.padding(horizontal = 8.dp)
                             )
@@ -1148,14 +1146,14 @@ fun ReceiveScreen(viewModel: ReceiveViewModel = viewModel()) {
                                 onClick = { viewModel.adjustTimeout(1) },
                                 modifier = Modifier.size(32.dp)
                             ) {
-                                Icon(Icons.Default.Add, contentDescription = "Plus", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
                     VisibilityOption(
-                        title = "Tout le monde pour toujours",
-                        subtitle = "Always discoverable",
+                        title = stringResource(R.string.visible_to_everyone),
+                        subtitle = stringResource(R.string.always_everyone_desc),
                         icon = Icons.Default.AllInclusive,
                         selected = visibilityMode == VisibilityMode.EVERYONE_ALWAYS,
                         onClick = { viewModel.setVisibilityMode(VisibilityMode.EVERYONE_ALWAYS) }
@@ -1283,7 +1281,7 @@ fun SendScreen(viewModel: SendViewModel) {
         Spacer(Modifier.height(24.dp))
         
         Text(
-            text = "Sélectionner un destinataire",
+            text = stringResource(R.string.select_recipient),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -1296,7 +1294,7 @@ fun SendScreen(viewModel: SendViewModel) {
             RadarPing()
             Spacer(Modifier.width(8.dp))
             Text(
-                text = "Recherche d'appareils à proximité...",
+                text = stringResource(R.string.searching_nearby),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1312,7 +1310,7 @@ fun SendScreen(viewModel: SendViewModel) {
 
             if (devices.isEmpty()) {
                 Text(
-                    text = "Aucun appareil trouvé",
+                    text = stringResource(R.string.no_devices_found),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1464,7 +1462,7 @@ fun DeviceBentoCard(
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            text = transferState.finishedMessage ?: if (transferState.isTransferring) transferState.status else "Prêt à recevoir",
+            text = transferState.finishedMessage ?: if (transferState.isTransferring) transferState.status else stringResource(R.string.ready_to_receive_desc),
             style = MaterialTheme.typography.labelSmall,
             color = if (transferState.finishedMessage != null) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -1513,12 +1511,12 @@ fun FileSelectionCard(fileName: String?, isAnyActive: Boolean, onModify: () -> U
             
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = if (fileName != null) "Prêt à envoyer" else "Aucun fichier",
+                    text = if (fileName != null) stringResource(R.string.ready_to_send) else stringResource(R.string.no_file),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = fileName ?: "Sélectionnez ce que vous voulez envoyer",
+                    text = fileName ?: stringResource(R.string.select_file_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -1528,7 +1526,7 @@ fun FileSelectionCard(fileName: String?, isAnyActive: Boolean, onModify: () -> U
             
             if (!isAnyActive) {
                 TextButton(onClick = onModify) {
-                    Text("Modifier")
+                    Text(stringResource(R.string.modify))
                 }
             }
         }
@@ -1544,8 +1542,8 @@ fun IncomingTransferDialog(request: IncomingTransferRequest) {
     if (showBlockConfirmation) {
         AlertDialog(
             onDismissRequest = { showBlockConfirmation = false },
-            title = { Text("Bloquer cet appareil ?") },
-            text = { Text("Si vous bloquez ${request.senderName}, il ne pourra plus vous envoyer de fichiers.") },
+            title = { Text(stringResource(R.string.block_device_title)) },
+            text = { Text(stringResource(R.string.block_device_desc, request.senderName)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -1555,7 +1553,7 @@ fun IncomingTransferDialog(request: IncomingTransferRequest) {
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Bloquer")
+                    Text(stringResource(R.string.block))
                 }
             },
             dismissButton = {
@@ -1563,7 +1561,7 @@ fun IncomingTransferDialog(request: IncomingTransferRequest) {
                     request.decline()
                     showBlockConfirmation = false 
                 }) {
-                    Text("Refuser seulement")
+                    Text(stringResource(R.string.refuse_only))
                 }
             }
         )
@@ -1586,17 +1584,17 @@ fun IncomingTransferDialog(request: IncomingTransferRequest) {
         },
         title = { 
             Text(text = when(request.status) {
-                TransferStatus.PENDING -> "Demande de transfert"
-                TransferStatus.TRANSFERRING -> "Réception en cours..."
-                TransferStatus.COMPLETED -> "Transfert terminé"
-                TransferStatus.FAILED -> "Échec du transfert"
+                TransferStatus.PENDING -> stringResource(R.string.transfer_request_title)
+                TransferStatus.TRANSFERRING -> stringResource(R.string.receiving_status)
+                TransferStatus.COMPLETED -> stringResource(R.string.transfer_completed)
+                TransferStatus.FAILED -> stringResource(R.string.transfer_failed)
             }) 
         },
         text = {
             Column {
                 if (request.status == TransferStatus.PENDING) {
                     Text(
-                        text = "${request.senderName} veut vous envoyer :",
+                        text = "${request.senderName} ${stringResource(R.string.wants_to_send)}",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     
@@ -1618,7 +1616,7 @@ fun IncomingTransferDialog(request: IncomingTransferRequest) {
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                text = if (request.isEncrypted) "Connexion chiffrée (AES-256)" else "⚠️ Connexion non sécurisée",
+                                text = if (request.isEncrypted) stringResource(R.string.encrypted_connection) else stringResource(R.string.unsecure_connection),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (request.isEncrypted) Color(0xFF2E7D32) else Color(0xFFE65100)
                             )
@@ -1654,7 +1652,7 @@ fun IncomingTransferDialog(request: IncomingTransferRequest) {
                 if (request.status == TransferStatus.PENDING) {
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        text = "Code de vérification :",
+                        text = stringResource(R.string.verification_code_label),
                         style = MaterialTheme.typography.labelSmall
                     )
                     Text(
@@ -1667,7 +1665,7 @@ fun IncomingTransferDialog(request: IncomingTransferRequest) {
                     )
                     if (request.isTrusted) {
                         Text(
-                            text = "✓ Appareil de confiance",
+                            text = stringResource(R.string.trusted_device_check),
                             color = Color(0xFF2E7D32),
                             style = MaterialTheme.typography.labelMedium,
                             modifier = Modifier.padding(top = 8.dp)
@@ -1692,7 +1690,7 @@ fun IncomingTransferDialog(request: IncomingTransferRequest) {
                         onClick = { request.accept() },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text("Accepter")
+                        Text(stringResource(R.string.accept))
                     }
                 }
                 TransferStatus.COMPLETED -> {
@@ -1701,16 +1699,16 @@ fun IncomingTransferDialog(request: IncomingTransferRequest) {
                         IncomingTransferManager.clear()
                     }) {
                         val label = when {
-                            request.fileType.startsWith("image/") || request.fileType.startsWith("video/") -> "Afficher dans la galerie"
-                            request.fileType == "text/plain" -> "Copier"
-                            else -> "Afficher dans mes dossiers"
+                            request.fileType.startsWith("image/") || request.fileType.startsWith("video/") -> stringResource(R.string.action_gallery)
+                            request.fileType == "text/plain" -> stringResource(R.string.action_copy)
+                            else -> stringResource(R.string.action_folders)
                         }
                         Text(label)
                     }
                 }
                 TransferStatus.FAILED -> {
                     Button(onClick = { IncomingTransferManager.clear() }) { 
-                        Text("Fermer") 
+                        Text(stringResource(R.string.close)) 
                     }
                 }
                 else -> {}
@@ -1725,11 +1723,11 @@ fun IncomingTransferDialog(request: IncomingTransferRequest) {
                         request.decline()
                     }
                 }) {
-                    Text("Refuser")
+                    Text(stringResource(R.string.refuse))
                 }
             } else if (request.status == TransferStatus.COMPLETED) {
                 TextButton(onClick = { IncomingTransferManager.clear() }) {
-                    Text("Fermer")
+                    Text(stringResource(R.string.close))
                 }
             }
         }

@@ -19,6 +19,7 @@ class TransferService(context: Context) {
     private val TAG = "TransferService"
     private val contentResolver = context.contentResolver
     private val settingsManager = SettingsManager(context)
+    private val appContext = context.applicationContext
 
     suspend fun sendFile(
         device: BeamDevice,
@@ -43,7 +44,7 @@ class TransferService(context: Context) {
 
         val socket = Socket()
         try {
-            onProgress("Connexion...", 0.1f)
+            onProgress(appContext.getString(R.string.status_connecting), 0.1f)
             socket.connect(InetSocketAddress(host, port), 5000)
             socket.soTimeout = 30000 
             
@@ -52,7 +53,7 @@ class TransferService(context: Context) {
             val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
 
             if (!isActive) return@withContext 0L
-            onProgress("Métadonnées...", 0.2f)
+            onProgress(appContext.getString(R.string.status_metadata), 0.2f)
             val metadata = JSONObject().apply {
                 put("name", fileName)
                 put("size", fileSize)
@@ -64,16 +65,16 @@ class TransferService(context: Context) {
             writer.println(metadata.toString())
 
             if (!isActive) return@withContext 0L
-            onProgress("Défi...", 0.3f)
+            onProgress(appContext.getString(R.string.status_challenge), 0.3f)
             val challenge = reader.readLine() ?: throw Exception("Pas de défi")
 
             if (!isActive) return@withContext 0L
-            onProgress("Signature...", 0.4f)
+            onProgress(appContext.getString(R.string.status_signature), 0.4f)
             val signatureHex = CryptoManager.signChallenge(challenge)
             writer.println(signatureHex)
 
             if (!isActive) return@withContext 0L
-            onProgress("Attente consentement...", -1f)
+            onProgress(appContext.getString(R.string.status_waiting_consent), -1f)
             val authResponse = reader.readLine()
             if (authResponse != "OK") {
                 throw Exception(authResponse ?: "Refusé")
@@ -81,7 +82,7 @@ class TransferService(context: Context) {
 
             val uploadStartTime = System.currentTimeMillis()
             
-            onProgress("Upload en cours...", 0.5f)
+            onProgress(appContext.getString(R.string.status_uploading), 0.5f)
             
             val rawOutput = socket.getOutputStream()
             
@@ -97,7 +98,7 @@ class TransferService(context: Context) {
                         encryptedOutput.write(buffer, 0, bytesRead)
                         totalBytesSent += bytesRead
                         val progress = 0.5f + (totalBytesSent.toFloat() / fileSize.toFloat() * 0.5f)
-                        onProgress("Envoi : ${(progress * 100).toInt()}%", progress)
+                        onProgress(appContext.getString(R.string.status_sending_percent, (progress * 100).toInt()), progress)
                     }
                 }
             }
@@ -114,13 +115,13 @@ class TransferService(context: Context) {
                 success = true
             ))
 
-            onProgress("Terminé", 1.0f)
+            onProgress(appContext.getString(R.string.status_completed), 1.0f)
             return@withContext duration
             
         } catch (e: Exception) {
             Log.e(TAG, "Erreur transfert", e)
             if (isActive) {
-                onProgress("Erreur : ${e.message}", -1f)
+                onProgress("${appContext.getString(R.string.failed)} : ${e.message}", -1f)
                 settingsManager.addHistoryItem(HistoryItem(
                     id = UUID.randomUUID().toString(),
                     fileName = fileName,
