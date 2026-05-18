@@ -167,39 +167,39 @@ fun BeamShareApp(sendViewModel: SendViewModel, receiveViewModel: ReceiveViewMode
     MaterialTheme(
         colorScheme = if (isDarkTheme) {
             darkColorScheme(
-                primary = Color(0xFFB1C5FF),
-                onPrimary = Color(0xFF002C71),
-                primaryContainer = Color(0xFF0043A6),
-                onPrimaryContainer = Color(0xFFD9E2FF),
-                secondary = Color(0xFFC0C6DC),
-                onSecondary = Color(0xFF2A3042),
-                secondaryContainer = Color(0xFF404659),
-                onSecondaryContainer = Color(0xFFDCE2F9),
-                background = Color(0xFF1B1B1F),
-                onBackground = Color(0xFFE3E2E6),
-                surface = Color(0xFF1B1B1F),
-                onSurface = Color(0xFFE3E2E6),
-                surfaceVariant = Color(0xFF44474F),
-                onSurfaceVariant = Color(0xFFC4C6D0),
-                outline = Color(0xFF8E9099)
+                primary = Color(0xFFD0BCFF),
+                onPrimary = Color(0xFF381E72),
+                primaryContainer = Color(0xFF4F378B),
+                onPrimaryContainer = Color(0xFFEADDFF),
+                secondary = Color(0xFFCCC2DC),
+                onSecondary = Color(0xFF332D41),
+                secondaryContainer = Color(0xFF4A4458),
+                onSecondaryContainer = Color(0xFFE8DEF8),
+                background = Color(0xFF1C1B1F),
+                onBackground = Color(0xFFE6E1E5),
+                surface = Color(0xFF1C1B1F),
+                onSurface = Color(0xFFE6E1E5),
+                surfaceVariant = Color(0xFF49454F),
+                onSurfaceVariant = Color(0xFFCAC4D0),
+                outline = Color(0xFF938F99)
             )
         } else {
             lightColorScheme(
-                primary = Color(0xFF004BCA),
+                primary = Color(0xFF6750A4),
                 onPrimary = Color.White,
-                primaryContainer = Color(0xFFD3E4FE),
-                onPrimaryContainer = Color(0xFF00174B),
-                secondary = Color(0xFF575F69),
+                primaryContainer = Color(0xFFEADDFF),
+                onPrimaryContainer = Color(0xFF21005D),
+                secondary = Color(0xFF625B71),
                 onSecondary = Color.White,
-                secondaryContainer = Color(0xFFDBE3EF),
-                onSecondaryContainer = Color(0xFF141C25),
-                background = Color(0xFFF8F9FF),
-                onBackground = Color(0xFF0B1C30),
-                surface = Color(0xFFF8F9FF),
-                onSurface = Color(0xFF0B1C30),
-                surfaceVariant = Color(0xFFD3E4FE),
-                onSurfaceVariant = Color(0xFF424656),
-                outline = Color(0xFF737687)
+                secondaryContainer = Color(0xFFE8DEF8),
+                onSecondaryContainer = Color(0xFF1D192B),
+                background = Color(0xFFFFFBFE),
+                onBackground = Color(0xFF1C1B1F),
+                surface = Color(0xFFFFFBFE),
+                onSurface = Color(0xFF1C1B1F),
+                surfaceVariant = Color(0xFFE7E0EB),
+                onSurfaceVariant = Color(0xFF49454F),
+                outline = Color(0xFF79747E)
             )
         }
     ) {
@@ -1101,7 +1101,7 @@ fun ReceiveScreen(viewModel: ReceiveViewModel = viewModel()) {
             Spacer(Modifier.height(8.dp))
             
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column {
@@ -1259,7 +1259,7 @@ fun PulseAnimation() {
                 scaleY = scale
                 alpha = alphaAnim
             }
-            .background(MaterialTheme.colorScheme.primary, CircleShape)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), CircleShape)
     )
 }
 
@@ -1443,7 +1443,7 @@ fun DeviceBentoCard(
                     .size(28.dp)
                     .offset(x = (-2).dp, y = (-2).dp),
                 shape = CircleShape,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 2.dp
             ) {
                 Icon(
@@ -1781,8 +1781,8 @@ fun getDeviceIcon(model: String): ImageVector {
 
 fun getDeviceBackgroundColor(name: String): Color {
     val colors = listOf(
-        Color(0xFF004BCA), Color(0xFF008038), Color(0xFF575F69), 
-        Color(0xFFBA1A1A), Color(0xFF00642A), Color(0xFF0052DC)
+        Color(0xFF6750A4), Color(0xFF388E3C), Color(0xFF455A64), 
+        Color(0xFFD32F2F), Color(0xFF1976D2), Color(0xFFF57C00)
     )
-    return colors[name.hashCode().coerceAtLeast(0) % colors.size]
+    return colors[Math.abs(name.hashCode()) % colors.size]
 }

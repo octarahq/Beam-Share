@@ -33,11 +33,31 @@ class BeamShareService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val secureRandom = SecureRandom()
 
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: android.net.Network) {
+            updateNotification()
+        }
+        override fun onLost(network: android.net.Network) {
+            updateNotification()
+        }
+        override fun onCapabilitiesChanged(network: android.net.Network, capabilities: NetworkCapabilities) {
+            updateNotification()
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         nsdHelper = NsdHelper.getInstance(this)
         settingsManager = SettingsManager(this)
         createNotificationChannel()
+
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        cm.registerDefaultNetworkCallback(networkCallback)
+    }
+
+    private fun updateNotification() {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(notificationId, createNotification())
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -407,6 +427,9 @@ class BeamShareService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        try { cm.unregisterNetworkCallback(networkCallback) } catch (_: Exception) {}
+
         serviceScope.cancel()
         nsdHelper.unregisterService()
         try {
