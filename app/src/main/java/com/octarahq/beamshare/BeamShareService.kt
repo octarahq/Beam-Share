@@ -4,6 +4,8 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -18,7 +20,6 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.security.SecureRandom
 import java.util.UUID
-import com.octarahq.beamshare.MainActivity
 
 class BeamShareService : Service() {
     private val tag = "BeamShareService"
@@ -77,11 +78,22 @@ class BeamShareService : Service() {
             else -> "Inactif"
         }
 
-        val methodText = when (method) {
-            TransferMethod.WIFI_LOCAL_ONLY -> "Wi-Fi local"
-            TransferMethod.BLUETOOTH_CLASSIC -> "Bluetooth Classic"
-            TransferMethod.WIFI_DIRECT_HYBRID -> "Wi-Fi Direct Hybride"
-            TransferMethod.AUTO -> "Automatique"
+        val methodText = if (method == TransferMethod.AUTO) {
+            val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+            val network = cm.activeNetwork
+            val caps = cm.getNetworkCapabilities(network)
+            if (caps?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true) {
+                "Wi-Fi local (Auto)"
+            } else {
+                "Wi-Fi Direct (Auto)"
+            }
+        } else {
+            when (method) {
+                TransferMethod.WIFI_LOCAL_ONLY -> "Wi-Fi local"
+                TransferMethod.BLUETOOTH_CLASSIC -> "Bluetooth Classic"
+                TransferMethod.WIFI_DIRECT_HYBRID -> "Wi-Fi Direct Hybride"
+                else -> "Inconnu"
+            }
         }
 
         return NotificationCompat.Builder(this, channelId)
@@ -180,7 +192,7 @@ class BeamShareService : Service() {
                     notificationManager.cancel(transactionId)
 
                     val savedFileUriStr = settingsManager.downloadUri
-                    var finalSavedPath: String? = null
+                    var finalSavedPath: String?
 
                     try {
                         val rawInput = socket.getInputStream()
@@ -342,7 +354,7 @@ class BeamShareService : Service() {
         if (!success) {
             val notification = NotificationCompat.Builder(this, transferChannelId)
                 .setContentTitle("Échec du transfert")
-                .setContentText("Le fichier $fileName n'a pas pu être reçu.")
+                .setContentText("Le fichier $fileName n'a pas pu être reçu de $sender.")
                 .setSmallIcon(android.R.drawable.stat_notify_error)
                 .setAutoCancel(true)
                 .build()
@@ -357,7 +369,7 @@ class BeamShareService : Service() {
 
         val notification = NotificationCompat.Builder(this, transferChannelId)
             .setContentTitle("Transfert terminé")
-            .setContentText("$fileName est prêt.")
+            .setContentText("$fileName reçu de $sender.")
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
