@@ -101,4 +101,12 @@
     <string name="unsecure_connection">⚠️ Unsecure connection</string>
     <string name="unknown_name">Unknown name</string>
     <string name="me_label">(Me)</string>
+    <string name="privacy_point1_title">1. Data Collection and Transmission</string>
+    <string name="privacy_point1_content">BeamShare is a decentralized, peer-to-peer file transfer application. We do not use any servers to facilitate transfers or store data. No data is ever sent to Octara or any third-party analytics/advertising services. All communication happens directly between your device and the recipient\'s device on your local network or via direct link.</string>
+    <string name="privacy_point2_title">2. Data Stored on Your Device</string>
+    <string name="privacy_point2_content">The application stores the following information locally in its private storage: ECDSA identity keys, device name, visibility and theme preferences, transfer history (last 50 items), and your selected download folder path.</string>
+    <string name="privacy_point3_title">3. Data Exchanged During Transfers</string>
+    <string name="privacy_point3_content">When you discover or transfer files, the other party sees: your device name, model, and Public Key. File metadata (name, size, type) and cryptographic signatures are also exchanged. The actual file content is encrypted end-to-end using AES-256-GCM.</string>
+    <string name="privacy_point4_title">4. Permissions</string>
+    <string name="privacy_point4_content">Internet and Wi-Fi permissions are used for local discovery and transmission. Bluetooth and Location (on some Android versions) are required for mDNS/BLE discovery. Notifications inform you of transfer requests.</string>
 </resources>

@@ -101,4 +101,12 @@
     <string name="unsecure_connection">⚠️ Connexion non sécurisée</string>
     <string name="unknown_name">Nom inconnu</string>
     <string name="me_label">(Moi)</string>
+    <string name="privacy_point1_title">1. Collecte et Transmission des Données</string>
+    <string name="privacy_point1_content">BeamShare est une application de transfert de fichiers décentralisée et de pair à pair. Nous n\'utilisons aucun serveur pour faciliter les transferts ou stocker des données. Aucune donnée n\'est jamais envoyée à Octara ou à des services tiers. Toutes les communications se font directement entre votre appareil et celui du destinataire sur votre réseau local ou via une liaison directe.</string>
+    <string name="privacy_point2_title">2. Données Stockées sur Votre Appareil</string>
+    <string name="privacy_point2_content">L\'application stocke les informations suivantes localement : clés d\'identité ECDSA, nom de l\'appareil, préférences de visibilité et de thème, historique des transferts (50 derniers) et le chemin de votre dossier de téléchargement.</string>
+    <string name="privacy_point3_title">3. Données Échangées durant le Transfert</string>
+    <string name="privacy_point3_content">Lors d\'un transfert, l\'autre partie voit : le nom de votre appareil, son modèle et votre clé publique. Les métadonnées du fichier (nom, taille, type) et des signatures cryptographiques sont également échangées. Le contenu du fichier est chiffré de bout en bout via AES-256-GCM.</string>
+    <string name="privacy_point4_title">4. Autorisations</string>
+    <string name="privacy_point4_content">Les autorisations Internet et Wi-Fi sont utilisées pour la découverte et la transmission locale. Le Bluetooth et la Position sont requis pour la découverte mDNS/BLE. Les notifications vous informent des demandes de transfert.</string>
 </resources>

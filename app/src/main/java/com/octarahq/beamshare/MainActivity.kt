@@ -231,6 +231,7 @@ fun BeamShareApp(sendViewModel: SendViewModel, receiveViewModel: ReceiveViewMode
                         "blacklist" -> BlacklistScreen(settingsManager, onBack = { currentSubScreen = null })
                         "history" -> HistoryScreen(settingsManager, onBack = { currentSubScreen = null })
                         "about" -> AboutScreen(onBack = { currentSubScreen = null })
+                        "privacy" -> PrivacyPolicyScreen(onBack = { currentSubScreen = null })
                     }
                 } else {
                     AnimatedContent(
@@ -544,7 +545,7 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
                     SettingsItem(
                         icon = Icons.Default.Policy,
                         title = stringResource(R.string.privacy_policy),
-                        onClick = { }
+                        onClick = { onNavigate("privacy") }
                     )
                 }
             }
@@ -870,6 +871,73 @@ fun HistoryScreen(settingsManager: SettingsManager, onBack: () -> Unit) {
 }
 
 @Composable
+fun PrivacyPolicyScreen(onBack: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.privacy_policy),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        
+        Spacer(Modifier.height(16.dp))
+        
+        PrivacySection(
+            title = stringResource(R.string.privacy_point1_title),
+            content = stringResource(R.string.privacy_point1_content)
+        )
+        
+        PrivacySection(
+            title = stringResource(R.string.privacy_point2_title),
+            content = stringResource(R.string.privacy_point2_content)
+        )
+        
+        PrivacySection(
+            title = stringResource(R.string.privacy_point3_title),
+            content = stringResource(R.string.privacy_point3_content)
+        )
+        
+        PrivacySection(
+            title = stringResource(R.string.privacy_point4_title),
+            content = stringResource(R.string.privacy_point4_content)
+        )
+        
+        Spacer(Modifier.height(24.dp))
+        
+        Text(
+            text = "Contact: octara.xyz",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
+        Spacer(Modifier.height(48.dp))
+    }
+}
+
+@Composable
+fun PrivacySection(title: String, content: String) {
+    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.secondary
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = content,
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Justify
+        )
+    }
+}
+
+@Composable
 fun AboutScreen(onBack: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -935,6 +1003,7 @@ fun TopBar(showBack: Boolean, currentSubScreen: String?, onBack: () -> Unit, onS
         currentSubScreen == "history" -> stringResource(R.string.title_history)
         currentSubScreen == "blacklist" -> stringResource(R.string.title_blacklist)
         currentSubScreen == "about" -> stringResource(R.string.title_about)
+        currentSubScreen == "privacy" -> stringResource(R.string.privacy_policy)
         showBack -> stringResource(R.string.title_settings)
         else -> stringResource(R.string.app_name)
     }
