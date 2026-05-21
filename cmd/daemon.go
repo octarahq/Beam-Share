@@ -12,6 +12,7 @@ var isForeground bool
 var daemonCmd = &cobra.Command{
 	Use:   "daemon",
 	Short: "Manage the BeamShare daemon in the background",
+	Long:  "To start the daemon in background run `daemon start &`",
 }
 
 var startCmd = &cobra.Command{
