@@ -1,8 +1,5 @@
 package cmd
 
-// TODO: Ajouter un cache avec le demon par defaut pour une reponse instant
-// Avec le flag --disable-cache pour que ca rafraichisse correctement
-
 import (
 	utilsServices "beam-share-cli/utils/services"
 	"context"

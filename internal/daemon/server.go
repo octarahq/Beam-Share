@@ -1,9 +1,16 @@
 package daemon
 
 import (
+	"beam-share-cli/internal/config"
+	"beam-share-cli/internal/crypto"
 	utilsServices "beam-share-cli/utils/services"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math/rand"
 	"net"
 	"os"
 	"sync"
@@ -12,25 +19,202 @@ import (
 
 const socketPath = "/tmp/beamshare.sock"
 
+type MessageIPC struct {
+	Event string `json:"event"`
+	ID    string `json:"id"`
+	File  string `json:"file"`
+	Size  int64  `json:"size"`
+	From  string `json:"from"`
+	Value string `json:"value"`
+}
+
+type PendingTransfer struct {
+	ID       string      `json:"id"`
+	FileName string      `json:"file_name"`
+	Size     int64       `json:"size"`
+	Sender   string      `json:"sender"`
+	SenderID string      `json:"sender_id"`
+	Status   string      `json:"status"`
+	TCPConn  net.Conn    `json:"-"`
+	Response chan string `json:"-"`
+}
+
 type CachedDevice struct {
 	Info     utilsServices.DeviceInfo
 	LastSeen time.Time
 }
 
 type DaemonServer struct {
-	mu       sync.RWMutex
-	devices  map[string]CachedDevice
-	listener net.Listener
+	mu        sync.RWMutex
+	devices   map[string]CachedDevice
+	transfers map[string]*PendingTransfer
+	listener  net.Listener
 }
 
 func StartServer() {
 	srv := &DaemonServer{
-		devices: make(map[string]CachedDevice),
+		devices:   make(map[string]CachedDevice),
+		transfers: make(map[string]*PendingTransfer),
 	}
+
+	portChan := make(chan int)
+	go srv.listenTCP(portChan)
+
+	tcpPort := <-portChan
+
+	go srv.registerService(tcpPort)
 
 	go srv.loopCacheRefresh()
 
 	srv.listenIPC()
+}
+
+func (s *DaemonServer) listenTCP(portChan chan int) {
+	listener, err := net.Listen("tcp", ":0")
+	if err != nil {
+		panic(err)
+	}
+	defer listener.Close()
+	portChan <- listener.Addr().(*net.TCPAddr).Port
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			continue
+		}
+		go s.handleIncomingTCP(conn)
+	}
+}
+
+func (s *DaemonServer) handleIncomingTCP(conn net.Conn) {
+	decoder := json.NewDecoder(conn)
+
+	var meta struct {
+		Name       string `json:"name"`
+		Size       int64  `json:"size"`
+		SenderName string `json:"sender_name"`
+		SenderID   string `json:"sender_id"`
+	}
+
+	if err := decoder.Decode(&meta); err != nil {
+		conn.Close()
+		return
+	}
+
+	_, _ = conn.Write([]byte("challenge_test_authentification\n"))
+
+	var signatureBuf = make([]byte, 1024)
+	n, err := conn.Read(signatureBuf)
+	if err != nil {
+		conn.Close()
+		return
+	}
+	_ = string(signatureBuf[:n])
+
+	rand.Seed(time.Now().UnixNano())
+	txID := fmt.Sprintf("tx-%03d", rand.Intn(1000))
+
+	transfer := &PendingTransfer{
+		ID:       txID,
+		FileName: meta.Name,
+		Size:     meta.Size,
+		Sender:   meta.SenderName,
+		SenderID: meta.SenderID,
+		Status:   "pending",
+		TCPConn:  conn,
+		Response: make(chan string),
+	}
+
+	s.mu.Lock()
+	s.transfers[txID] = transfer
+	s.mu.Unlock()
+
+	action := <-transfer.Response
+
+	if action == "accept" {
+		_, _ = conn.Write([]byte("OK\n"))
+		s.downloadFile(transfer)
+	} else {
+		_, _ = conn.Write([]byte("REFUSED\n"))
+		conn.Close()
+		s.mu.Lock()
+		delete(s.transfers, txID)
+		s.mu.Unlock()
+	}
+}
+
+func (s *DaemonServer) downloadFile(t *PendingTransfer) {
+	cfg := config.Load()
+	defer t.TCPConn.Close()
+
+	rawECDH, err := crypto.DeriveSharedSecret(t.SenderID)
+	if err != nil {
+		fmt.Println("ECDH derivation error:", err)
+		return
+	}
+	aesKey := sha256.Sum256(rawECDH)
+
+	iv := make([]byte, 12)
+	_, err = io.ReadFull(t.TCPConn, iv)
+	if err != nil {
+		fmt.Println("Unable to read IV sent by Android:", err)
+		return
+	}
+
+	block, err := aes.NewCipher(aesKey[:])
+	if err != nil {
+		return
+	}
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return
+	}
+
+	os.MkdirAll(cfg.DownloadPath, 0755)
+
+	filePath := cfg.DownloadPath + "/" + t.FileName
+	file, err := os.Create(filePath)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	cipherText, err := io.ReadAll(t.TCPConn)
+	if err != nil {
+		fmt.Println("Error during byte transfer:", err)
+		return
+	}
+	plainText, err := aesGCM.Open(nil, iv, cipherText, nil)
+	if err != nil {
+		fmt.Println("Decryption failed")
+		return
+	}
+
+	_, _ = file.Write(plainText)
+
+	fmt.Printf("Done! %s \n", filePath)
+
+	s.mu.Lock()
+	delete(s.transfers, t.ID)
+	s.mu.Unlock()
+}
+
+func (s *DaemonServer) registerService(port int) {
+	cfg := config.Load()
+
+	nodeID, err := crypto.GetNodeID()
+	if err != nil {
+		fmt.Println("Critical error during key management:", err)
+		nodeID = "error_key_generation"
+	}
+
+	txtRecords := []string{
+		fmt.Sprintf("device_type=%s", config.GetDeviceType()),
+		fmt.Sprintf("model=%s", config.GetLinuxModel()),
+		fmt.Sprintf("node_id=%s", nodeID),
+	}
+
+	utilsServices.RegisterDevice(cfg.Name, "_beamshare._tcp", "local.", port, txtRecords)
 }
 
 func (s *DaemonServer) loopCacheRefresh() {
@@ -101,20 +285,51 @@ func srvClose(l net.Listener) {
 
 func (s *DaemonServer) handleConnection(conn net.Conn) {
 	defer conn.Close()
+	decoder := json.NewDecoder(conn)
+	encoder := json.NewEncoder(conn)
 
-	s.mu.RLock()
-	var list []utilsServices.DeviceInfo
-	for _, dev := range s.devices {
-		list = append(list, dev.Info)
-	}
-	s.mu.RUnlock()
-
-	if list == nil {
-		list = []utilsServices.DeviceInfo{}
+	var msg MessageIPC
+	if err := decoder.Decode(&msg); err != nil {
+		return
 	}
 
-	jsonData, _ := json.Marshal(list)
-	conn.Write(jsonData)
+	switch msg.Event {
+	case "list_transfers":
+		s.mu.RLock()
+		var list []PendingTransfer
+		for _, t := range s.transfers {
+			if t.Status == "pending" {
+				list = append(list, *t)
+			}
+		}
+		s.mu.RUnlock()
+		_ = encoder.Encode(list)
+
+	case "attach_transfer":
+		s.mu.Lock()
+		t, exists := s.transfers[msg.ID]
+		s.mu.Unlock()
+
+		if !exists {
+			_ = encoder.Encode(MessageIPC{Event: "error", Value: "Unknown ID"})
+			return
+		}
+
+		_ = encoder.Encode(MessageIPC{Event: "incoming_req", ID: t.ID, File: t.FileName, Size: t.Size, From: t.Sender})
+
+		var resp MessageIPC
+		if err := decoder.Decode(&resp); err == nil {
+			if resp.Value == "accept" {
+				s.mu.Lock()
+				t.Status = "transferring"
+				s.mu.Unlock()
+				t.Response <- "accept"
+				_ = encoder.Encode(MessageIPC{Event: "done"})
+			} else {
+				t.Response <- "reject"
+			}
+		}
+	}
 }
 
 func logDebug(message string) {
