@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start -p 4059",
     "lint": "eslint",
-    "prod": "npm run build && npm start start"
+    "prod": "npm run build && npm run start"
   },
   "dependencies": {
     "next": "16.2.6",
