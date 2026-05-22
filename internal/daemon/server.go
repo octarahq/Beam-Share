@@ -20,12 +20,13 @@ import (
 const socketPath = "/tmp/beamshare.sock"
 
 type MessageIPC struct {
-	Event string `json:"event"`
-	ID    string `json:"id"`
-	File  string `json:"file"`
-	Size  int64  `json:"size"`
-	From  string `json:"from"`
-	Value string `json:"value"`
+	Event  string `json:"event"`
+	ID     string `json:"id"`
+	File   string `json:"file"`
+	Size   int64  `json:"size"`
+	From   string `json:"from"`
+	Value  string `json:"value"`
+	NodeId string `json:"node_id"`
 }
 
 type PendingTransfer struct {
@@ -327,7 +328,7 @@ func (s *DaemonServer) handleConnection(conn net.Conn) {
 			return
 		}
 
-		_ = encoder.Encode(MessageIPC{Event: "incoming_req", ID: t.ID, File: t.FileName, Size: t.Size, From: t.Sender})
+		_ = encoder.Encode(MessageIPC{Event: "incoming_req", ID: t.ID, File: t.FileName, Size: t.Size, From: t.Sender, NodeId: t.SenderID})
 
 		var resp MessageIPC
 		if err := decoder.Decode(&resp); err == nil {

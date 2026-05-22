@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"beam-share-cli/internal/config"
 	"beam-share-cli/internal/daemon"
 	"bufio"
 	"encoding/json"
@@ -76,6 +77,23 @@ func runReceive(cmd *cobra.Command, args []string) {
 		_ = decoder.Decode(&finalMsg)
 		fmt.Println("Done! self-correcting flow")
 	} else {
+		fmt.Println("Block Device ? [y/n]: ")
+		reader := bufio.NewReader(os.Stdin)
+		input, _ := reader.ReadString('\n')
+		choice := strings.ToLower(strings.TrimSpace(input))
+		val := "reject"
+		if choice == "y" || choice == "o" {
+			val = "accept"
+		}
 
+		if val == "accept" {
+			bl := config.LoadBlackList()
+			err := config.AddDevice(bl, msg.From, msg.NodeId)
+			if err == nil {
+				fmt.Println("Success!")
+			} else {
+				fmt.Println("Error while adding to the blacklist :", err)
+			}
+		}
 	}
 }
