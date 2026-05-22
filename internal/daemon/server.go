@@ -218,19 +218,17 @@ func (s *DaemonServer) registerService(port int) {
 }
 
 func (s *DaemonServer) loopCacheRefresh() {
-	for i := 0; i < 3; i++ {
-		go func(delay time.Duration) {
-			time.Sleep(delay)
-
-			for {
-				list, err := s.scanNetworkActive()
-				if err == nil && len(list) > 0 {
-					s.mergeCache(list)
-				}
-				time.Sleep(2 * time.Second)
+	go func() {
+		time.Sleep(1 * time.Second)
+		for {
+			list, err := utilsServices.FetchDevices("_beamshare._tcp", 4, false)
+			if err == nil && len(list) > 0 {
+				s.mergeCache(list)
 			}
-		}(time.Duration(i) * time.Second)
-	}
+
+			time.Sleep(10 * time.Second)
+		}
+	}()
 }
 
 func (s *DaemonServer) mergeCache(newList []utilsServices.DeviceInfo) {
@@ -246,7 +244,7 @@ func (s *DaemonServer) mergeCache(newList []utilsServices.DeviceInfo) {
 	}
 
 	for ip, dev := range s.devices {
-		if now.Sub(dev.LastSeen) > 10*time.Second {
+		if now.Sub(dev.LastSeen) > 60*time.Second {
 			delete(s.devices, ip)
 		}
 	}
@@ -294,6 +292,20 @@ func (s *DaemonServer) handleConnection(conn net.Conn) {
 	}
 
 	switch msg.Event {
+	case "list_devices":
+		s.mu.RLock()
+		var list []utilsServices.DeviceInfo
+		for _, d := range s.devices {
+			list = append(list, utilsServices.DeviceInfo{
+				Name:   d.Info.Name,
+				Ip:     d.Info.Ip,
+				Port:   d.Info.Port,
+				NodeId: d.Info.NodeId,
+			})
+		}
+		s.mu.RUnlock()
+		_ = encoder.Encode(list)
+
 	case "list_transfers":
 		s.mu.RLock()
 		var list []PendingTransfer

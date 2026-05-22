@@ -11,14 +11,14 @@ import (
 	"path/filepath"
 )
 
-func getPathKey() string {
+func GetPathKey() string {
 	home, _ := os.UserHomeDir()
 
 	return filepath.Join(home, ".config", "beamshare", "id_ecdsa.pem")
 }
 
 func GetNodeID() (string, error) {
-	keyPath := getPathKey()
+	keyPath := GetPathKey()
 	var privKey *ecdsa.PrivateKey
 
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {

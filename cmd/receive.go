@@ -75,5 +75,7 @@ func runReceive(cmd *cobra.Command, args []string) {
 		var finalMsg daemon.MessageIPC
 		_ = decoder.Decode(&finalMsg)
 		fmt.Println("Done! self-correcting flow")
+	} else {
+
 	}
 }

@@ -29,7 +29,3 @@ func GetLinuxModel() string {
 
 	return "Linux Device"
 }
-
-func GetNodeID() string {
-	return "3059301306072a8648ce3d020106082a8648ce3d03010703420004" + os.Getenv("USER")
-}

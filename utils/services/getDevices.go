@@ -3,15 +3,17 @@ package utilsServices
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/grandcat/zeroconf"
 )
 
 type DeviceInfo struct {
-	Name string `json:"name"`
-	Ip   string `json:"ip"`
-	Port int    `json:"port"`
+	Name   string `json:"name"`
+	Ip     string `json:"ip"`
+	Port   int    `json:"port"`
+	NodeId string `json:"node_id"`
 }
 
 func FetchDevices(serviceName string, scanTime time.Duration, debug bool) ([]DeviceInfo, error) {
@@ -20,13 +22,11 @@ func FetchDevices(serviceName string, scanTime time.Duration, debug bool) ([]Dev
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(scanTime)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), scanTime*time.Second)
 	defer cancel()
 
 	entries := make(chan *zeroconf.ServiceEntry)
-
 	var devices []DeviceInfo
-
 	collectDone := make(chan struct{})
 
 	go func(results <-chan *zeroconf.ServiceEntry) {
@@ -37,12 +37,12 @@ func FetchDevices(serviceName string, scanTime time.Duration, debug bool) ([]Dev
 			}
 
 			device := DeviceInfo{
-				Name: ParseName(entry.Instance),
-				Ip:   ip,
-				Port: entry.Port,
+				Name:   ParseName(entry.Instance),
+				Ip:     ip,
+				Port:   entry.Port,
+				NodeId: getTXTValue(entry.Text, "node_id"),
 			}
 			devices = append(devices, device)
-
 		}
 		close(collectDone)
 	}(entries)
@@ -57,7 +57,6 @@ func FetchDevices(serviceName string, scanTime time.Duration, debug bool) ([]Dev
 	}
 
 	<-ctx.Done()
-
 	<-collectDone
 
 	if devices == nil {
@@ -67,10 +66,20 @@ func FetchDevices(serviceName string, scanTime time.Duration, debug bool) ([]Dev
 	if debug {
 		fmt.Printf("Found %d devices :", len(devices))
 		for i, d := range devices {
-			fmt.Printf("\n#%d %s %s:%d", i+1, d.Name, d.Ip, d.Port)
+			fmt.Printf("\n#%d %s %s:%d (node_id: %s)", i+1, d.Name, d.Ip, d.Port, d.NodeId)
 		}
 		fmt.Println("")
 	}
 
 	return devices, nil
+}
+
+func getTXTValue(txt []string, key string) string {
+	prefix := key + "="
+	for _, record := range txt {
+		if strings.HasPrefix(record, prefix) {
+			return strings.TrimPrefix(record, prefix)
+		}
+	}
+	return ""
 }

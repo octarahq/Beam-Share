@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/grandcat/zeroconf"
@@ -31,12 +32,6 @@ func init() {
 	discoverCmd.Flags().Int16VarP(&scanTime, "scan-time", "s", 3, "Set scan duration in seconds (default: 3)")
 }
 
-type DeviceInfo struct {
-	Name string `json:"name"`
-	Ip   string `json:"ip"`
-	Port int    `json:"port"`
-}
-
 func run(cmd *cobra.Command, args []string) {
 	resolver, err := zeroconf.NewResolver(nil)
 	if err != nil {
@@ -53,7 +48,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	entries := make(chan *zeroconf.ServiceEntry)
 
-	var devices []DeviceInfo
+	var devices []utilsServices.DeviceInfo
 
 	collectDone := make(chan struct{})
 
@@ -64,10 +59,11 @@ func run(cmd *cobra.Command, args []string) {
 				ip = entry.AddrIPv4[0].String()
 			}
 
-			device := DeviceInfo{
-				Name: utilsServices.ParseName(entry.Instance),
-				Ip:   ip,
-				Port: entry.Port,
+			device := utilsServices.DeviceInfo{
+				Name:   utilsServices.ParseName(entry.Instance),
+				Ip:     ip,
+				Port:   entry.Port,
+				NodeId: getTXTValue(entry.Text, "node_id"),
 			}
 			devices = append(devices, device)
 
@@ -98,7 +94,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	if isJsonOutput {
 		if devices == nil {
-			devices = []DeviceInfo{}
+			devices = []utilsServices.DeviceInfo{}
 		}
 
 		jsonData, err := json.Marshal(devices)
@@ -111,4 +107,14 @@ func run(cmd *cobra.Command, args []string) {
 	} else {
 		fmt.Println("Scan finished.")
 	}
+}
+
+func getTXTValue(txt []string, key string) string {
+	prefix := key + "="
+	for _, record := range txt {
+		if strings.HasPrefix(record, prefix) {
+			return strings.TrimPrefix(record, prefix)
+		}
+	}
+	return ""
 }
