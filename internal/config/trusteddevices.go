@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -51,5 +52,16 @@ func SaveTrustedDevices(list TrustedDevices) error {
 	path := GetTrustedDevicesPath()
 
 	return os.WriteFile(path, data, 0755)
+}
 
+func IsTrusted(list TrustedDevices, nodeid string) bool {
+	nodeid = strings.TrimSpace(strings.ToLower(nodeid))
+	for _, d := range list {
+		id := strings.TrimSpace(strings.ToLower(d.NodeId))
+		if id == nodeid {
+			return true
+		}
+	}
+
+	return false
 }
