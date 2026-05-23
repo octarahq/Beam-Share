@@ -21,7 +21,7 @@ var Time string
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage BeamShare configuration",
-	Long: `Exemple of use : config name --set MyPC
+	Long: `Exemple of use : beamshare config name --set MyPC
 	
 Available settings:
 	- name
@@ -140,7 +140,7 @@ Available settings:
 				config.Save(cfg)
 				fmt.Println("Saved!")
 			} else {
-				fmt.Println("You can change your visibility with config visibility --set :")
+				fmt.Println("You can change your visibility with 'beamshare config visibility --set ...' :")
 				fmt.Println("\t- disabled (nobody can see your device, you can still send file)")
 				fmt.Println("\t- trusted  (all devices can see you but all their request will be rejected if not in the trusted devices list)")
 				fmt.Println("\t- all --time min:sec (everybody can see you for min and sec)")
@@ -156,6 +156,9 @@ Available settings:
 		default:
 			fmt.Printf("Unknown configuration key : %s", key)
 		}
+
+		fmt.Println("")
+		fmt.Println("If you made a change, you may need a 'beamshare daemon resatart &' for them to apply")
 	},
 }
 
