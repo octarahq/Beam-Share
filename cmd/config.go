@@ -20,12 +20,14 @@ var configCmd = &cobra.Command{
 Available settings:
 	- name
 	- downloadpath
+	- blacklist
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.Load()
 
 		if len(args) == 0 {
 			fmt.Printf("name = %s\n", cfg.Name)
+			fmt.Printf("downloadpath = %s\n", cfg.DownloadPath)
 		}
 
 		key := strings.ToLower(args[0])
