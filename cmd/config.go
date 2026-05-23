@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 )
 
 var setValue string
+var removeIdx int
 var reset bool
 
 var configCmd = &cobra.Command{
@@ -28,6 +30,7 @@ Available settings:
 		if len(args) == 0 {
 			fmt.Printf("name = %s\n", cfg.Name)
 			fmt.Printf("downloadpath = %s\n", cfg.DownloadPath)
+			return
 		}
 
 		key := strings.ToLower(args[0])
@@ -69,6 +72,37 @@ Available settings:
 			} else {
 				fmt.Println(cfg.DownloadPath)
 			}
+		case "blacklist":
+			bl := config.LoadBlackList()
+			if cmd.Flags().Changed("remove") {
+				device := bl[removeIdx]
+				err := config.RemoveDevice(bl, device.NodeId)
+				if err != nil {
+					fmt.Println("Error while removing the device :", err)
+					return
+				}
+				fmt.Println("Succes!")
+			} else {
+				fmt.Println("All the blacklisted devices :")
+				fmt.Println("[Tip] Use --remove [id] to remove the device you want.")
+				fmt.Println("")
+				w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+
+				fmt.Fprintln(w, "ID\tNAME\tADDED AT\tPUBLIC KEY")
+
+				for i, d := range bl {
+					dateStr := d.AddedAt.Format("Mon Jan 2 15:04:05 2006")
+
+					shortKey := d.NodeId
+					if len(shortKey) > 12 {
+						shortKey = shortKey[:12] + "..."
+					}
+
+					fmt.Fprintf(w, "%d\t%s\t%s\t%s\n", i, d.Name, dateStr, shortKey)
+				}
+
+				w.Flush()
+			}
 		default:
 			fmt.Printf("Unknown configuration key : %s", key)
 		}
@@ -80,5 +114,6 @@ func init() {
 
 	configCmd.Flags().StringVarP(&setValue, "set", "s", "", "New settings")
 	configCmd.Flags().Lookup("set").NoOptDefVal = "DEFAULT_VALUE"
+	configCmd.Flags().IntVar(&removeIdx, "remove", 0, "Remove a device from the blacklist")
 	configCmd.Flags().BoolVarP(&reset, "reset", "r", false, "Reset to default value")
 }
