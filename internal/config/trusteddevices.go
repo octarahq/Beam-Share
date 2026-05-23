@@ -9,9 +9,9 @@ import (
 )
 
 type TrustedDevice struct {
-	Name    string        `json:"name"`
-	NodeId  string        `json:"node_id"`
-	AddedAt time.Duration `json:"added_at"`
+	Name    string    `json:"name"`
+	NodeId  string    `json:"node_id"`
+	AddedAt time.Time `json:"added_at"`
 }
 
 type TrustedDevices []TrustedDevice
