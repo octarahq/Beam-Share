@@ -89,6 +89,8 @@ func (s *DaemonServer) listenTCP(portChan chan int) {
 
 func (s *DaemonServer) handleIncomingTCP(conn net.Conn) {
 	bl := config.LoadBlackList()
+	cfg := config.Load()
+	trustedList := config.LoadTrustedDevices()
 	decoder := json.NewDecoder(conn)
 
 	var meta struct {
@@ -116,6 +118,11 @@ func (s *DaemonServer) handleIncomingTCP(conn net.Conn) {
 	rand.Seed(time.Now().UnixNano())
 	txID := fmt.Sprintf("tx-%03d", rand.Intn(1000))
 
+	if !config.IsTrusted(trustedList, meta.SenderID) && cfg.Visibility == "trusted" {
+		s.refuseConnection(conn, txID)
+		return
+	}
+
 	if config.DeviceInBlackList(bl, meta.SenderID) {
 		s.refuseConnection(conn, txID)
 		return
@@ -140,6 +147,11 @@ func (s *DaemonServer) handleIncomingTCP(conn net.Conn) {
 
 	if action == "accept" {
 		_, _ = conn.Write([]byte("OK\n"))
+		config.AddTrustedDevices(trustedList, config.TrustedDevice{
+			Name:    meta.SenderName,
+			NodeId:  meta.SenderID,
+			AddedAt: time.Now(),
+		})
 		s.downloadFile(transfer)
 	} else {
 		s.refuseConnection(conn, txID)
@@ -212,6 +224,9 @@ func (s *DaemonServer) downloadFile(t *PendingTransfer) {
 
 func (s *DaemonServer) registerService(port int) {
 	cfg := config.Load()
+	if cfg.Visibility == "hidden" {
+		return
+	}
 
 	nodeID, err := crypto.GetNodeID()
 	if err != nil {
@@ -229,8 +244,16 @@ func (s *DaemonServer) registerService(port int) {
 }
 
 func (s *DaemonServer) loopCacheRefresh() {
+	cfg := config.Load()
 	go func() {
 		time.Sleep(1 * time.Second)
+		if cfg.EveryoneModeUntil != nil {
+			if time.Now().After(*cfg.EveryoneModeUntil) {
+				cfg.EveryoneModeUntil = nil
+				cfg.Visibility = "trusted"
+				config.Save(cfg)
+			}
+		}
 		for {
 			list, err := utilsServices.FetchDevices("_beamshare._tcp", 4, false)
 			if err == nil && len(list) > 0 {
