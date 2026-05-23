@@ -88,6 +88,7 @@ func (s *DaemonServer) listenTCP(portChan chan int) {
 }
 
 func (s *DaemonServer) handleIncomingTCP(conn net.Conn) {
+	bl := config.LoadBlackList()
 	decoder := json.NewDecoder(conn)
 
 	var meta struct {
@@ -115,6 +116,11 @@ func (s *DaemonServer) handleIncomingTCP(conn net.Conn) {
 	rand.Seed(time.Now().UnixNano())
 	txID := fmt.Sprintf("tx-%03d", rand.Intn(1000))
 
+	if config.DeviceInBlackList(bl, meta.SenderID) {
+		s.refuseConnection(conn, txID)
+		return
+	}
+
 	transfer := &PendingTransfer{
 		ID:       txID,
 		FileName: meta.Name,
@@ -136,12 +142,16 @@ func (s *DaemonServer) handleIncomingTCP(conn net.Conn) {
 		_, _ = conn.Write([]byte("OK\n"))
 		s.downloadFile(transfer)
 	} else {
-		_, _ = conn.Write([]byte("REFUSED\n"))
-		conn.Close()
-		s.mu.Lock()
-		delete(s.transfers, txID)
-		s.mu.Unlock()
+		s.refuseConnection(conn, txID)
 	}
+}
+
+func (s *DaemonServer) refuseConnection(conn net.Conn, txID string) {
+	_, _ = conn.Write([]byte("REFUSED\n"))
+	conn.Close()
+	s.mu.Lock()
+	delete(s.transfers, txID)
+	s.mu.Unlock()
 }
 
 func (s *DaemonServer) downloadFile(t *PendingTransfer) {

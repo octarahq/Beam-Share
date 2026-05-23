@@ -77,6 +77,11 @@ func runReceive(cmd *cobra.Command, args []string) {
 		_ = decoder.Decode(&finalMsg)
 		fmt.Println("Done! self-correcting flow")
 	} else {
+		bl := config.LoadBlackList()
+		if config.DeviceInBlackList(bl, msg.NodeId) {
+			return
+		}
+
 		fmt.Println("Block Device ? [y/n]: ")
 		reader := bufio.NewReader(os.Stdin)
 		input, _ := reader.ReadString('\n')
@@ -87,7 +92,6 @@ func runReceive(cmd *cobra.Command, args []string) {
 		}
 
 		if val == "accept" {
-			bl := config.LoadBlackList()
 			err := config.AddDevice(bl, msg.From, msg.NodeId)
 			if err == nil {
 				fmt.Println("Success!")
