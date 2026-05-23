@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -28,7 +29,11 @@ func LoadBlackList() Blacklist {
 		return Blacklist{}
 	}
 
-	_ = json.Unmarshal(data, &blacklist)
+	err = json.Unmarshal(data, &blacklist)
+	if err != nil {
+		SaveBlackList(Blacklist{})
+		return Blacklist{}
+	}
 	return blacklist
 }
 
@@ -63,4 +68,16 @@ func RemoveDevice(blacklist Blacklist, nodeid string) error {
 	}
 
 	return SaveBlackList(blacklist)
+}
+
+func DeviceInBlackList(blacklist Blacklist, nodeid string) bool {
+	nodeid = strings.TrimSpace(strings.ToLower(nodeid))
+	for _, d := range blacklist {
+		id := strings.TrimSpace(strings.ToLower(d.NodeId))
+		if id == nodeid {
+			return true
+		}
+	}
+
+	return false
 }
