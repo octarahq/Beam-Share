@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type AppConfig struct {
-	Name         string `json:"name"`
-	DownloadPath string `json:"download_path"`
+	Name              string     `json:"name"`
+	DownloadPath      string     `json:"download_path"`
+	Visibility        string     `json:"visibility"` // disabled | trusted | all
+	EveryoneModeUntil *time.Time `json:"everyone_mode_until"`
 }
 
 func getConfigFilepath() string {
@@ -26,6 +29,8 @@ func Load() AppConfig {
 	if _, err := os.Stat(home + "/Téléchargements"); err == nil {
 		cfg.DownloadPath = home + "/Téléchargements/BeamShare"
 	}
+	cfg.EveryoneModeUntil = nil
+	cfg.Visibility = "disabled"
 
 	if err != nil {
 		return AppConfig{}
