@@ -1,4 +1,4 @@
-package com.octarahq.beamshare
+package beamshare.octarahq.com
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -15,12 +15,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -46,7 +48,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -136,6 +137,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BeamShareApp(sendViewModel: SendViewModel, receiveViewModel: ReceiveViewModel = viewModel()) {
     val themeMode by receiveViewModel.themeMode.collectAsStateWithLifecycle()
@@ -148,6 +150,19 @@ fun BeamShareApp(sendViewModel: SendViewModel, receiveViewModel: ReceiveViewMode
     var currentTab by remember { mutableStateOf("receive") }
     var showSettings by remember { mutableStateOf(false) }
     var currentSubScreen by remember { mutableStateOf<String?>(null) }
+
+    val pagerState = rememberPagerState(pageCount = { 2 })
+
+    LaunchedEffect(pagerState.currentPage) {
+        currentTab = if (pagerState.currentPage == 0) "receive" else "send"
+    }
+
+    LaunchedEffect(currentTab) {
+        val targetPage = if (currentTab == "receive") 0 else 1
+        if (pagerState.currentPage != targetPage) {
+            pagerState.animateScrollToPage(targetPage)
+        }
+    }
 
     BackHandler(enabled = showSettings || currentSubScreen != null) {
         if (currentSubScreen != null) {
@@ -247,10 +262,16 @@ fun BeamShareApp(sendViewModel: SendViewModel, receiveViewModel: ReceiveViewMode
                         if (isSettings) {
                             SettingsScreen(onNavigate = { currentSubScreen = it })
                         } else {
-                            if (currentTab == "receive") {
-                                ReceiveScreen()
-                            } else {
-                                SendScreen(sendViewModel)
+                            HorizontalPager(
+                                state = pagerState,
+                                modifier = Modifier.fillMaxSize(),
+                                verticalAlignment = Alignment.Top
+                            ) { page ->
+                                if (page == 0) {
+                                    ReceiveScreen()
+                                } else {
+                                    SendScreen(sendViewModel)
+                                }
                             }
                         }
                     }
@@ -1054,52 +1075,29 @@ fun TopBar(showBack: Boolean, currentSubScreen: String?, onBack: () -> Unit, onS
 
 @Composable
 fun BottomNavBar(currentTab: String, onTabSelected: (String) -> Unit) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(80.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
         tonalElevation = 8.dp
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            NavItem(
-                label = stringResource(R.string.tab_receive),
-                icon = Icons.Outlined.Download,
-                selected = currentTab == "receive",
-                onClick = { onTabSelected("receive") }
+        NavigationBarItem(
+            selected = currentTab == "receive",
+            onClick = { onTabSelected("receive") },
+            label = { Text(stringResource(R.string.tab_receive)) },
+            icon = { Icon(Icons.Outlined.Download, null) },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer
             )
-            NavItem(
-                label = stringResource(R.string.tab_send),
-                icon = Icons.Outlined.Upload,
-                selected = currentTab == "send",
-                onClick = { onTabSelected("send") }
-            )
-        }
-    }
-}
-
-@Composable
-fun NavItem(label: String, icon: ImageVector, selected: Boolean, onClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .clip(CircleShape)
-            .clickable { onClick() }
-            .padding(horizontal = 24.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+        NavigationBarItem(
+            selected = currentTab == "send",
+            onClick = { onTabSelected("send") },
+            label = { Text(stringResource(R.string.tab_send)) },
+            icon = { Icon(Icons.Outlined.Upload, null) },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+            )
         )
     }
 }
@@ -1851,5 +1849,5 @@ fun getDeviceBackgroundColor(name: String): Color {
         Color(0xFF6750A4), Color(0xFF388E3C), Color(0xFF455A64), 
         Color(0xFFD32F2F), Color(0xFF1976D2), Color(0xFFF57C00)
     )
-    return colors[Math.abs(name.hashCode()) % colors.size]
+    return colors[kotlin.math.abs(name.hashCode()) % colors.size]
 }

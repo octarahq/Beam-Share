@@ -1,4 +1,4 @@
-package com.octarahq.beamshare
+package beamshare.octarahq.com
 
 import android.app.PendingIntent
 import android.content.Context

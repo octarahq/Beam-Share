@@ -1,4 +1,4 @@
-package com.octarahq.beamshare
+package beamshare.octarahq.com
 
 import org.junit.Test
 

@@ -1,4 +1,4 @@
-package com.octarahq.beamshare
+package beamshare.octarahq.com
 
 import android.app.*
 import android.content.Context
@@ -300,13 +300,13 @@ class BeamShareService : Service() {
 
     private fun showIncomingNotification(sender: String, fileName: String, isTrusted: Boolean, senderId: String, notificationId: Int) {
         val acceptIntent = Intent(this, TransferReceiver::class.java).apply {
-            action = "com.octarahq.beamshare.ACTION_ACCEPT"
+            action = "beamshare.octarahq.com.ACTION_ACCEPT"
         }
         val declineIntent = Intent(this, TransferReceiver::class.java).apply {
-            action = "com.octarahq.beamshare.ACTION_DECLINE"
+            action = "beamshare.octarahq.com.ACTION_DECLINE"
         }
         val blockIntent = Intent(this, TransferReceiver::class.java).apply {
-            action = "com.octarahq.beamshare.ACTION_BLOCK"
+            action = "beamshare.octarahq.com.ACTION_BLOCK"
             putExtra("sender_id", senderId)
         }
 
