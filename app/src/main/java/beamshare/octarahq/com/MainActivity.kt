@@ -296,6 +296,8 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val autoAcceptTrusted by viewModel.autoAcceptTrusted.collectAsStateWithLifecycle()
 
+    val cardColor = if (isSystemInDarkTheme()) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
+
     var showNameEditor by remember { mutableStateOf(false) }
     var showTransferMethodSelector by remember { mutableStateOf(false) }
     var showThemeSelector by remember { mutableStateOf(false) }
@@ -409,8 +411,8 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            colors = CardDefaults.cardColors(containerColor = cardColor),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
             Row(
                 modifier = Modifier.padding(16.dp),
@@ -445,8 +447,8 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            colors = CardDefaults.cardColors(containerColor = cardColor),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
             Column {
                 SettingsItem(
@@ -506,8 +508,8 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            colors = CardDefaults.cardColors(containerColor = cardColor),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
             Column {
                 SettingsItem(
@@ -1121,27 +1123,43 @@ fun TopBar(showBack: Boolean, currentSubScreen: String?, onBack: () -> Unit, onS
 @Composable
 fun BottomNavBar(currentTab: String, onTabSelected: (String) -> Unit) {
     NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-        tonalElevation = 8.dp
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 3.dp
     ) {
         NavigationBarItem(
             selected = currentTab == "receive",
             onClick = { onTabSelected("receive") },
-            label = { Text(stringResource(R.string.tab_receive)) },
+            label = { 
+                Text(
+                    text = stringResource(R.string.tab_receive),
+                    style = MaterialTheme.typography.labelMedium
+                ) 
+            },
             icon = { Icon(Icons.Outlined.Download, null) },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = MaterialTheme.colorScheme.primary,
-                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
         )
         NavigationBarItem(
             selected = currentTab == "send",
             onClick = { onTabSelected("send") },
-            label = { Text(stringResource(R.string.tab_send)) },
+            label = { 
+                Text(
+                    text = stringResource(R.string.tab_send),
+                    style = MaterialTheme.typography.labelMedium
+                ) 
+            },
             icon = { Icon(Icons.Outlined.Upload, null) },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = MaterialTheme.colorScheme.primary,
-                indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
         )
     }
