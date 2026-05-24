@@ -19,6 +19,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"golang.design/x/clipboard"
 )
 
 const socketPath = "/tmp/beamshare.sock"
@@ -218,15 +220,6 @@ func (s *DaemonServer) downloadFile(t *PendingTransfer, notifID string) {
 		return
 	}
 
-	os.MkdirAll(cfg.DownloadPath, 0755)
-
-	filePath := cfg.DownloadPath + "/" + t.FileName
-	file, err := os.Create(filePath)
-	if err != nil {
-		return
-	}
-	defer file.Close()
-
 	cipherText, err := io.ReadAll(t.TCPConn)
 	if err != nil {
 		fmt.Println("Error during byte transfer:", err)
@@ -238,14 +231,6 @@ func (s *DaemonServer) downloadFile(t *PendingTransfer, notifID string) {
 		return
 	}
 
-	_, _ = file.Write(plainText)
-
-	fmt.Printf("Done! %s \n", filePath)
-
-	s.mu.Lock()
-	delete(s.transfers, t.ID)
-	s.mu.Unlock()
-
 	ext := strings.ToLower(filepath.Ext(t.FileName))
 	isImage := false
 	isText := false
@@ -256,16 +241,40 @@ func (s *DaemonServer) downloadFile(t *PendingTransfer, notifID string) {
 		isText = true
 	}
 
+	var filePath string
+	if !isText {
+		os.MkdirAll(cfg.DownloadPath, 0755)
+		filePath = cfg.DownloadPath + "/" + t.FileName
+		file, err := os.Create(filePath)
+		if err != nil {
+			return
+		}
+		_, _ = file.Write(plainText)
+		file.Close()
+		fmt.Printf("Done! %s \n", filePath)
+	} else {
+		fmt.Printf("Done! Text received (not saved automatically)\n")
+	}
+
+	s.mu.Lock()
+	delete(s.transfers, t.ID)
+	s.mu.Unlock()
+
 	var args []string
 	if notifID != "" {
 		args = append(args, "-r", notifID)
 	}
-	args = append(args, "BeamShare: Transfer complete!", fmt.Sprintf("File received: %s", t.FileName), "-i", "document-save")
+
+	if isText {
+		args = append(args, "BeamShare: Text received!", fmt.Sprintf("From %s", t.Sender), "-i", "text-x-generic")
+	} else {
+		args = append(args, "BeamShare: Transfer complete!", fmt.Sprintf("File received: %s", t.FileName), "-i", "document-save")
+	}
 
 	if isImage {
-		args = append(args, "--action=gallery=Open in Gallery", "--action=folder=Show in files")
+		args = append(args, "--action=gallery=Open in Gallery", "--action=copy=Copy image", "--action=folder=Show in files")
 	} else if isText {
-		args = append(args, "--action=file=Open file", "--action=folder=Show in files")
+		args = append(args, "--action=copy=Copy text", "--action=save=Save to .txt")
 	} else {
 		args = append(args, "--action=folder=Show in files")
 	}
@@ -278,7 +287,31 @@ func (s *DaemonServer) downloadFile(t *PendingTransfer, notifID string) {
 		if doneAction == "gallery" || doneAction == "file" {
 			openFile(filePath)
 		} else if doneAction == "folder" {
-			openFolder(filepath.Dir(filePath))
+			if !isText {
+				openFolder(filepath.Dir(filePath))
+			}
+		} else if doneAction == "copy" {
+			err := clipboard.Init()
+			if err != nil {
+				return
+			}
+			if isText {
+				clipboard.Write(clipboard.FmtText, []byte(plainText))
+			} else if isImage {
+				clipboard.Write(clipboard.FmtImage, []byte(plainText))
+			}
+		} else if doneAction == "save" {
+			if isText {
+				saveCmd := exec.Command("zenity", "--file-selection", "--save", "--confirm-overwrite", "--filename=" + filepath.Join(cfg.DownloadPath, "received_text.txt"))
+				out, err := saveCmd.Output()
+				if err == nil {
+					savePath := strings.TrimSpace(string(out))
+					if savePath != "" {
+						os.WriteFile(savePath, plainText, 0644)
+						openFolder(filepath.Dir(savePath))
+					}
+				}
+			}
 		}
 	}()
 }
