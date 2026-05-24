@@ -5,6 +5,8 @@ import (
 	"beam-share-cli/utils"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -28,6 +30,7 @@ Available settings:
 	- downloadpath
 	- blacklist
 	- visibility
+	- startonboot
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.Load()
@@ -38,10 +41,11 @@ Available settings:
 			fmt.Printf("downloadpath = %s\n", cfg.DownloadPath)
 			if cfg.EveryoneModeUntil != nil {
 				remaining := time.Until(*cfg.EveryoneModeUntil)
-				fmt.Printf("visibility = %s (%02d:%02d)", cfg.Visibility, int(remaining.Minutes()), int(remaining.Hours()))
+				fmt.Printf("visibility = %s (%02d:%02d)\n", cfg.Visibility, int(remaining.Minutes()), int(remaining.Hours()))
 			} else {
 				fmt.Printf("visibility = %s\n", cfg.Visibility)
 			}
+			fmt.Printf("startonboot = %t\n", cfg.StartOnBoot)
 			return
 		}
 
@@ -153,12 +157,35 @@ Available settings:
 					fmt.Printf("visibility = %s\n", cfg.Visibility)
 				}
 			}
+		case "startonboot":
+			if cmd.Flags().Changed("set") || cmd.Flags().Changed("reset") {
+				var targetVal bool
+				if reset {
+					targetVal = false
+				} else {
+					targetVal = strings.ToLower(setValue) == "true" || setValue == "1"
+				}
+				cfg.StartOnBoot = targetVal
+				err := config.Save(cfg)
+				if err != nil {
+					fmt.Println("Error while saving :", err)
+					return
+				}
+				err = manageSystemdService(targetVal)
+				if err != nil {
+					fmt.Println("Error managing systemd service:", err)
+				} else {
+					fmt.Println("Saved and systemd service updated!")
+				}
+			} else {
+				fmt.Println(cfg.StartOnBoot)
+			}
 		default:
 			fmt.Printf("Unknown configuration key : %s", key)
 		}
 
 		fmt.Println("")
-		fmt.Println("If you made a change, you may need a 'beamshare daemon resatart &' for them to apply")
+		fmt.Println("If you made a change, you may need a 'beamshare daemon restart &' for them to apply")
 	},
 }
 
@@ -169,4 +196,85 @@ func init() {
 	configCmd.Flags().IntVar(&removeIdx, "remove", 0, "Remove a device from the blacklist")
 	configCmd.Flags().BoolVarP(&reset, "reset", "r", false, "Reset to default value")
 	configCmd.Flags().StringVar(&Time, "time", "10:00", "Change the time")
+}
+
+func manageSystemdService(enable bool) error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("failed to get user home dir: %w", err)
+	}
+
+	serviceDir := filepath.Join(home, ".config", "systemd", "user")
+	servicePath := filepath.Join(serviceDir, "beamshare.service")
+
+	if !enable {
+		if _, err := os.Stat(servicePath); err == nil {
+			_ = exec.Command("systemctl", "--user", "stop", "beamshare").Run()
+			_ = exec.Command("systemctl", "--user", "disable", "beamshare").Run()
+			_ = os.Remove(servicePath)
+			_ = exec.Command("systemctl", "--user", "daemon-reload").Run()
+		}
+		return nil
+	}
+
+	err = os.MkdirAll(serviceDir, 0755)
+	if err != nil {
+		return fmt.Errorf("failed to create systemd user directory: %w", err)
+	}
+
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	if strings.Contains(execPath, "go-build") || strings.Contains(execPath, "Temp") {
+		cwd, _ := os.Getwd()
+		localBin := filepath.Join(cwd, "beamshare")
+		if _, err := os.Stat(localBin); err == nil {
+			execPath = localBin
+		} else {
+			execPath = filepath.Join(home, "go", "bin", "beamshare")
+		}
+	}
+
+	serviceContent := fmt.Sprintf(`[Unit]
+Description=BeamShare Daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=%s daemon run
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+`, execPath)
+
+	err = os.WriteFile(servicePath, []byte(serviceContent), 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write systemd service file: %w", err)
+	}
+
+	err = exec.Command("systemctl", "--user", "daemon-reload").Run()
+	if err != nil {
+		return fmt.Errorf("failed to reload systemd daemon: %w", err)
+	}
+
+	err = exec.Command("systemctl", "--user", "enable", "beamshare").Run()
+	if err != nil {
+		return fmt.Errorf("failed to enable systemd service: %w", err)
+	}
+
+	err = exec.Command("systemctl", "--user", "start", "beamshare").Run()
+	if err != nil {
+		return fmt.Errorf("failed to start systemd service: %w", err)
+	}
+
+	username := os.Getenv("USER")
+	if username == "" {
+		username = filepath.Base(home)
+	}
+	_ = exec.Command("loginctl", "enable-linger", username).Run()
+
+	return nil
 }

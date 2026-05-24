@@ -285,21 +285,21 @@ func (s *DaemonServer) downloadFile(t *PendingTransfer, notifID string) {
 
 func openFile(path string) {
 	if runtime.GOOS == "windows" {
-		exec.Command("cmd", "/c", "start", path).Start()
+		exec.Command("cmd", "/c", "start", path).Run()
 	} else if runtime.GOOS == "darwin" {
-		exec.Command("open", path).Start()
+		exec.Command("open", path).Run()
 	} else {
-		exec.Command("xdg-open", path).Start()
+		exec.Command("xdg-open", path).Run()
 	}
 }
 
 func openFolder(path string) {
 	if runtime.GOOS == "windows" {
-		exec.Command("explorer", path).Start()
+		exec.Command("explorer", path).Run()
 	} else if runtime.GOOS == "darwin" {
-		exec.Command("open", path).Start()
+		exec.Command("open", path).Run()
 	} else {
-		exec.Command("xdg-open", path).Start()
+		exec.Command("xdg-open", path).Run()
 	}
 }
 

@@ -12,6 +12,7 @@ type AppConfig struct {
 	DownloadPath      string     `json:"download_path"`
 	Visibility        string     `json:"visibility"` // disabled | trusted | all
 	EveryoneModeUntil *time.Time `json:"everyone_mode_until"`
+	StartOnBoot       bool       `json:"start_on_boot"`
 }
 
 func getConfigFilepath() string {

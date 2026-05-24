@@ -28,7 +28,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-
 type tappableContainer struct {
 	widget.BaseWidget
 	content  fyne.CanvasObject
@@ -58,8 +57,6 @@ type tappableText struct {
 	text     *canvas.Text
 	OnTapped func()
 }
-
-
 
 type DeviceInfo struct {
 	Name   string `json:"name"`
@@ -267,12 +264,12 @@ func Run() {
 	dropLabel.TextSize = 18
 	dropLabel.TextStyle = fyne.TextStyle{Bold: true}
 
-		var dropZone *fyne.Container
+	var dropZone *fyne.Container
 	var dropCard *widget.Card
 	var selectedFile string
 
 	var selectBtn *widget.Button
-	
+
 	var deviceMu sync.Mutex
 	deviceStates := make(map[string]string)
 	deviceTimes := make(map[string]time.Duration)
@@ -286,7 +283,7 @@ func Run() {
 
 		pollingActive = true
 		loadingLabel := widget.NewLabel("Searching for nearby devices...")
-		
+
 		scrollBox := container.NewHBox()
 		devicesScroll := container.NewHScroll(scrollBox)
 		devicesScroll.SetMinSize(fyne.NewSize(0, 180))
@@ -295,7 +292,7 @@ func Run() {
 			widget.NewLabelWithStyle("Select a recipient", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 			loadingLabel,
 			devicesScroll,
-			widget.NewLabel("Ready to send:\n" + filepath.Base(selectedFile)),
+			widget.NewLabel("Ready to send:\n"+filepath.Base(selectedFile)),
 			widget.NewButton("Cancel", func() {
 				pollingActive = false
 				selectedFile = ""
@@ -331,11 +328,11 @@ func Run() {
 						continue
 					}
 					devIp := d.Ip
-					
+
 					deviceMu.Lock()
 					state := deviceStates[nodeId]
 					deviceMu.Unlock()
-					
+
 					if state == "" {
 						state = "ready"
 					}
@@ -396,7 +393,7 @@ func Run() {
 						widget.NewLabelWithStyle(d.Name, fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 						subLabel,
 					)
-					
+
 					tappableCard := newTappableContainer(cardStack, func() {
 						deviceMu.Lock()
 						if deviceStates[nodeId] == "sending" || deviceStates[nodeId] == "done" {
@@ -405,7 +402,7 @@ func Run() {
 						}
 						deviceStates[nodeId] = "sending"
 						deviceMu.Unlock()
-						
+
 						go func() {
 							start := time.Now()
 							var cmd *exec.Cmd
@@ -426,7 +423,7 @@ func Run() {
 									dur = parsedMs
 								}
 							}
-							
+
 							deviceMu.Lock()
 							if err == nil {
 								deviceStates[nodeId] = "done"
@@ -437,10 +434,10 @@ func Run() {
 							deviceMu.Unlock()
 						}()
 					})
-					
+
 					newObjects = append(newObjects, container.NewPadded(tappableCard))
 				}
-				
+
 				devCount := len(devices)
 
 				fyne.Do(func() {
@@ -486,7 +483,6 @@ func Run() {
 		}
 	})
 
-
 	headerBar := container.NewHBox(readyLabel, layout.NewSpacer())
 
 	mainContent := container.NewBorder(
@@ -512,12 +508,21 @@ func Run() {
 
 		pathBox := container.NewBorder(nil, nil, nil, browseBtn, downloadPathEntry)
 
+		startOnBootCheck := widget.NewCheck("Start daemon on boot (using systemd)", func(bool) {})
+		startOnBootCheck.SetChecked(cfg.StartOnBoot)
+
 		d := dialog.NewCustomConfirm("Settings", "Save", "Cancel", container.NewVBox(
 			widget.NewLabel("Download Folder:"),
 			pathBox,
+			widget.NewLabel(""),
+			startOnBootCheck,
 		), func(b bool) {
-			if b && downloadPathEntry.Text != "" {
+			if b {
 				newPath := downloadPathEntry.Text
+				startOnBootVal := "false"
+				if startOnBootCheck.Checked {
+					startOnBootVal = "true"
+				}
 
 				var cmd *exec.Cmd
 				if strings.Contains(os.Args[0], "go-build") || strings.Contains(os.Args[0], "Temp") {
@@ -527,10 +532,20 @@ func Run() {
 				}
 				cmd.Stdout = os.Stdout
 				cmd.Stderr = os.Stderr
-				go cmd.Run()
+				_ = cmd.Run()
+
+				var bootCmd *exec.Cmd
+				if strings.Contains(os.Args[0], "go-build") || strings.Contains(os.Args[0], "Temp") {
+					bootCmd = exec.Command("go", "run", ".", "config", "startonboot", "--set", startOnBootVal)
+				} else {
+					bootCmd = exec.Command(os.Args[0], "config", "startonboot", "--set", startOnBootVal)
+				}
+				bootCmd.Stdout = os.Stdout
+				bootCmd.Stderr = os.Stderr
+				go bootCmd.Run()
 			}
 		}, myWindow)
-		d.Resize(fyne.NewSize(450, 150))
+		d.Resize(fyne.NewSize(450, 220))
 		d.Show()
 	}
 
