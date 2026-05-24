@@ -83,6 +83,7 @@ func SendFileToDevice(targetIP string, targetPort int, filePath string, remotePu
 		return fmt.Errorf("transfer refused by device (received response: %q)", response)
 	}
 	fmt.Println("Transfer accepted! Encrypting stream...")
+	transferStart := time.Now()
 
 	rawECDH, err := crypto.DeriveSharedSecret(remotePubKeyHex)
 	if err != nil {
@@ -115,7 +116,7 @@ func SendFileToDevice(targetIP string, targetPort int, filePath string, remotePu
 		return fmt.Errorf("error during byte transfer: %w", err)
 	}
 
-	fmt.Println("File sent successfully!")
+	fmt.Printf("File sent successfully! (%dms)\n", time.Since(transferStart).Milliseconds())
 	return nil
 }
 

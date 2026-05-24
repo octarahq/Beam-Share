@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -40,11 +41,13 @@ var sendCmd = &cobra.Command{
 			if err := decoder.Decode(&devices); err == nil {
 				for _, d := range devices {
 					if d.Ip == targetIP || strings.Contains(d.Ip, targetIP) {
-						resolvedKey = d.NodeId
-						if targetPort == 0 {
-							targetPort = d.Port
+						if targetPort == 0 || d.Port == targetPort {
+							resolvedKey = d.NodeId
+							if targetPort == 0 {
+								targetPort = d.Port
+							}
+							break
 						}
-						break
 					}
 				}
 			}
@@ -78,7 +81,26 @@ var sendCmd = &cobra.Command{
 
 		err = network.SendFileToDevice(targetIP, targetPort, filePath, resolvedKey)
 		if err != nil {
+			if strings.Contains(err.Error(), "connection refused") || strings.Contains(err.Error(), "timeout") {
+				fmt.Printf("Port %d is stale/dead. Fetching fresh mDNS records to find the active port...\n", targetPort)
+				devices, err2 := utilsServices.FetchDevices("_beamshare._tcp", 5, false)
+				if err2 == nil {
+					for _, d := range devices {
+						if d.Ip == targetIP || strings.Contains(d.Ip, targetIP) {
+							fmt.Printf("Trying discovered port: %d\n", d.Port)
+							err = network.SendFileToDevice(targetIP, d.Port, filePath, d.NodeId)
+							if err == nil {
+								break
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if err != nil {
 			fmt.Println("\nTransfer failed:", err)
+			os.Exit(1)
 		}
 	},
 }
