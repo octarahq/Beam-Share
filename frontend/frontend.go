@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"beam-share-cli/internal/config"
 	"beam-share-cli/internal/crypto"
 	"encoding/json"
 	"fmt"
@@ -495,7 +496,45 @@ func Run() {
 		centerArea,
 	)
 
-	settingsBtn := widget.NewButtonWithIcon("", theme.SettingsIcon(), func() {})
+	showSettingsDialog := func() {
+		cfg := config.Load()
+
+		downloadPathEntry := widget.NewEntry()
+		downloadPathEntry.SetText(cfg.DownloadPath)
+
+		browseBtn := widget.NewButton("Browse...", func() {
+			dialog.ShowFolderOpen(func(lu fyne.ListableURI, err error) {
+				if err == nil && lu != nil {
+					downloadPathEntry.SetText(lu.Path())
+				}
+			}, myWindow)
+		})
+
+		pathBox := container.NewBorder(nil, nil, nil, browseBtn, downloadPathEntry)
+
+		d := dialog.NewCustomConfirm("Settings", "Save", "Cancel", container.NewVBox(
+			widget.NewLabel("Download Folder:"),
+			pathBox,
+		), func(b bool) {
+			if b && downloadPathEntry.Text != "" {
+				newPath := downloadPathEntry.Text
+
+				var cmd *exec.Cmd
+				if strings.Contains(os.Args[0], "go-build") || strings.Contains(os.Args[0], "Temp") {
+					cmd = exec.Command("go", "run", ".", "config", "downloadpath", "--set", newPath)
+				} else {
+					cmd = exec.Command(os.Args[0], "config", "downloadpath", "--set", newPath)
+				}
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				go cmd.Run()
+			}
+		}, myWindow)
+		d.Resize(fyne.NewSize(450, 150))
+		d.Show()
+	}
+
+	settingsBtn := widget.NewButtonWithIcon("", theme.SettingsIcon(), showSettingsDialog)
 	settingsBtn.Importance = widget.LowImportance
 	topRight := container.NewHBox(settingsBtn)
 
