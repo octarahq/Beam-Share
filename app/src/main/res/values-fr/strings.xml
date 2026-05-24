@@ -99,6 +99,8 @@
     <string name="method_auto_direct">Wi-Fi Direct (Auto)</string>
     <string name="encrypted_connection">Connexion chiffrée (AES-256)</string>
     <string name="unsecure_connection">⚠️ Connexion non sécurisée</string>
+    <string name="auto_accept_trusted">Accepter auto. (confiance)</string>
+    <string name="auto_accept_trusted_desc">Accepter automatiquement les transferts provenant de vos appareils de confiance</string>
     <string name="unknown_name">Nom inconnu</string>
     <string name="me_label">(Moi)</string>
     <string name="privacy_point1_title">1. Collecte et Transmission des Données</string>

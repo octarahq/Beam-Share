@@ -189,8 +189,6 @@ class BeamShareService : Service() {
                 val isTrusted = settingsManager.isDeviceTrusted(senderId)
                 val verificationCode = CryptoManager.calculateVerificationCode(senderId.decodeHex())
 
-                showIncomingNotification(senderName, fileName, isTrusted, senderId, transactionId)
-
                 val request = IncomingTransferRequest(
                     senderName = senderName,
                     senderId = senderId,
@@ -202,7 +200,14 @@ class BeamShareService : Service() {
                     isEncrypted = encryptionRequested
                 )
 
-                val accepted = IncomingTransferManager.waitForUserDecision(request)
+                val accepted = if (isTrusted && settingsManager.autoAcceptTrusted) {
+                    IncomingTransferManager.setAutoRequest(request)
+                    true
+                } else {
+                    showIncomingNotification(senderName, fileName, isTrusted, senderId, transactionId)
+                    IncomingTransferManager.waitForUserDecision(request)
+                }
+
                 val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
                 if (accepted) {

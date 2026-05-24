@@ -294,6 +294,7 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
     val downloadPath by viewModel.downloadPathDisplay.collectAsStateWithLifecycle()
     val transferMethod by viewModel.transferMethod.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val autoAcceptTrusted by viewModel.autoAcceptTrusted.collectAsStateWithLifecycle()
 
     var showNameEditor by remember { mutableStateOf(false) }
     var showTransferMethodSelector by remember { mutableStateOf(false) }
@@ -521,6 +522,14 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
                     onClick = { onNavigate("trusted") }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                SettingsToggleItem(
+                    icon = Icons.Default.AutoFixHigh,
+                    title = stringResource(R.string.auto_accept_trusted),
+                    subtitle = stringResource(R.string.auto_accept_trusted_desc),
+                    checked = autoAcceptTrusted,
+                    onCheckedChange = { viewModel.setAutoAcceptTrusted(it) }
+                )
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 SettingsItem(
                     icon = Icons.Default.Block,
                     title = stringResource(R.string.title_blacklist),
@@ -739,6 +748,42 @@ fun TransferMethodOption(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+fun SettingsToggleItem(
+    icon: ImageVector,
+    title: String,
+    subtitle: String? = null,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+            if (subtitle != null) {
+                Text(subtitle, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            }
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.primary,
+                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        )
     }
 }
 

@@ -37,6 +37,9 @@ class ReceiveViewModel(application: Application) : AndroidViewModel(application)
     private val _themeMode = MutableStateFlow(settingsManager.themeMode)
     val themeMode = _themeMode.asStateFlow()
 
+    private val _autoAcceptTrusted = MutableStateFlow(settingsManager.autoAcceptTrusted)
+    val autoAcceptTrusted = _autoAcceptTrusted.asStateFlow()
+
     private var timeoutJob: Job? = null
 
     init {
@@ -101,6 +104,11 @@ class ReceiveViewModel(application: Application) : AndroidViewModel(application)
     fun setThemeMode(mode: ThemeMode) {
         settingsManager.themeMode = mode
         _themeMode.value = mode
+    }
+
+    fun setAutoAcceptTrusted(enabled: Boolean) {
+        settingsManager.autoAcceptTrusted = enabled
+        _autoAcceptTrusted.value = enabled
     }
 
     private fun updateServiceState() {

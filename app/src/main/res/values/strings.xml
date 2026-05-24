@@ -99,6 +99,8 @@
     <string name="method_auto_direct">Wi-Fi Direct (Auto)</string>
     <string name="encrypted_connection">Encrypted connection (AES-256)</string>
     <string name="unsecure_connection">⚠️ Unsecure connection</string>
+    <string name="auto_accept_trusted">Auto-accept trusted devices</string>
+    <string name="auto_accept_trusted_desc">Automatically accept transfers from your trusted devices</string>
     <string name="unknown_name">Unknown name</string>
     <string name="me_label">(Me)</string>
     <string name="privacy_point1_title">1. Data Collection and Transmission</string>

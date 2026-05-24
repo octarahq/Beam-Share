@@ -106,10 +106,12 @@ class TransferService(context: Context) {
             val duration = System.currentTimeMillis() - uploadStartTime
             if (!isActive) throw Exception("Annulé")
             
+            settingsManager.addTrustedDevice(device.id, device.name)
+
             settingsManager.addHistoryItem(HistoryItem(
                 id = UUID.randomUUID().toString(),
                 fileName = fileName,
-                deviceName = host,
+                deviceName = device.name,
                 timestamp = System.currentTimeMillis(),
                 isIncoming = false,
                 success = true

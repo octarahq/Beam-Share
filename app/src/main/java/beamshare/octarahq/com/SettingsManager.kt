@@ -97,6 +97,10 @@ class SettingsManager(context: Context) {
         }
         set(value) = prefs.edit { putString("theme_mode", value.name) }
 
+    var autoAcceptTrusted: Boolean
+        get() = prefs.getBoolean("auto_accept_trusted", false)
+        set(value) = prefs.edit { putBoolean("auto_accept_trusted", value) }
+
     fun isDeviceTrusted(publicKey: String): Boolean {
         return getTrustedDevicesMap().containsKey(publicKey)
     }

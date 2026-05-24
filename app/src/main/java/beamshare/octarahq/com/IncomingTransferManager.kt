@@ -50,6 +50,10 @@ object IncomingTransferManager {
         }
     }
 
+    fun setAutoRequest(request: IncomingTransferRequest) {
+        _currentRequest.value = request.copy(status = TransferStatus.TRANSFERRING)
+    }
+
     fun decide(accepted: Boolean) {
         decisionContinuation(accepted)
     }
