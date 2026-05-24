@@ -77,12 +77,29 @@ func StartServer() {
 }
 
 func (s *DaemonServer) listenTCP(portChan chan int) {
-	listener, err := net.Listen("tcp", ":0")
-	if err != nil {
-		panic(err)
+	cfg := config.Load()
+	var listener net.Listener
+	var err error
+
+	if cfg.LastPort > 0 {
+		listener, err = net.Listen("tcp", fmt.Sprintf(":%d", cfg.LastPort))
+	}
+
+	if listener == nil || err != nil {
+		listener, err = net.Listen("tcp", ":0")
+		if err != nil {
+			panic(err)
+		}
 	}
 	defer listener.Close()
-	portChan <- listener.Addr().(*net.TCPAddr).Port
+
+	port := listener.Addr().(*net.TCPAddr).Port
+	if cfg.LastPort != port {
+		cfg.LastPort = port
+		config.Save(cfg)
+	}
+
+	portChan <- port
 
 	for {
 		conn, err := listener.Accept()
@@ -152,19 +169,23 @@ func (s *DaemonServer) handleIncomingTCP(conn net.Conn) {
 	sizeMB := float64(meta.Size) / (1024 * 1024)
 	text := fmt.Sprintf("%s wants to send you %s (%.2f MB)\nID: %s", meta.SenderName, meta.Name, sizeMB, txID)
 
-	cmd := exec.Command("notify-send",
-		"BeamShare: Incoming file!",
-		text,
-		"-i", "document-send",
-		"--action=accept=Accept",
-		"--action=reject=Refuse",
-	)
-	out, err := cmd.Output()
-	action := strings.TrimSpace(string(out))
+	isTrusted := config.IsTrusted(trustedList, meta.SenderID)
 
-	if err != nil || action != "accept" {
-		s.refuseConnection(conn, txID)
-		return
+	if !(cfg.AutoAccept && isTrusted) {
+		cmd := exec.Command("notify-send",
+			"BeamShare: Incoming file!",
+			text,
+			"-i", "document-send",
+			"--action=accept=Accept",
+			"--action=reject=Refuse",
+		)
+		out, err := cmd.Output()
+		action := strings.TrimSpace(string(out))
+
+		if err != nil || action != "accept" {
+			s.refuseConnection(conn, txID)
+			return
+		}
 	}
 
 	_, _ = conn.Write([]byte("OK\n"))
