@@ -13,6 +13,8 @@ type AppConfig struct {
 	Visibility        string     `json:"visibility"` // disabled | trusted | all
 	EveryoneModeUntil *time.Time `json:"everyone_mode_until"`
 	StartOnBoot       bool       `json:"start_on_boot"`
+	AutoAccept        bool       `json:"auto_accept"`
+	LastPort          int        `json:"last_port"`
 }
 
 func getConfigFilepath() string {
@@ -32,6 +34,7 @@ func Load() AppConfig {
 	}
 	cfg.EveryoneModeUntil = nil
 	cfg.Visibility = "disabled"
+	cfg.AutoAccept = false
 
 	if err != nil {
 		return AppConfig{}

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"beam-share-cli/internal/config"
+	"beam-share-cli/internal/daemon"
 	"beam-share-cli/utils"
 	"fmt"
 	"os"
@@ -19,6 +20,8 @@ var setValue string
 var removeIdx int
 var reset bool
 var Time string
+var Enable bool
+var Disable bool
 
 var configCmd = &cobra.Command{
 	Use:   "config",
@@ -31,6 +34,7 @@ Available settings:
 	- blacklist
 	- visibility
 	- startonboot
+	- autoaccept
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.Load()
@@ -46,6 +50,17 @@ Available settings:
 				fmt.Printf("visibility = %s\n", cfg.Visibility)
 			}
 			fmt.Printf("startonboot = %t\n", cfg.StartOnBoot)
+			fmt.Printf("autoaccept = %t\n", cfg.AutoAccept)
+			return
+		}
+
+		if cmd.Flags().Changed("enabled") && cmd.Flags().Changed("disabled") {
+			fmt.Println("Error: You cannot use enabled and disable flags at th same time!")
+			return
+		}
+
+		if cmd.Flags().Changed("reset") && cmd.Flags().Changed("set") {
+			fmt.Println("Error: You cannot use reset and set flags at th same time!")
 			return
 		}
 
@@ -180,13 +195,53 @@ Available settings:
 			} else {
 				fmt.Println(cfg.StartOnBoot)
 			}
+		case "autoaccept":
+			if cmd.Flags().Changed("enabled") || cmd.Flags().Changed("disabled") {
+				var state bool
+				if Enable {
+					state = true
+				} else if Disable {
+					state = false
+				}
+
+				cfg.AutoAccept = state
+				config.Save(cfg)
+				fmt.Println("Success!")
+			} else {
+				if cfg.AutoAccept {
+					fmt.Println("Feature enabled")
+				} else {
+					fmt.Println("Feature disabled")
+				}
+			}
+
 		default:
 			fmt.Printf("Unknown configuration key : %s", key)
 		}
 
 		fmt.Println("")
-		fmt.Println("If you made a change, you may need a 'beamshare daemon restart &' for them to apply")
+		restartDaemonIfNeeded()
 	},
+}
+
+func restartDaemonIfNeeded() {
+	err := exec.Command("systemctl", "--user", "is-active", "--quiet", "beamshare").Run()
+	if err == nil {
+		fmt.Println("Applying changes: Restarting systemd service...")
+		_ = exec.Command("systemctl", "--user", "restart", "beamshare").Run()
+		return
+	}
+
+	if daemon.IsRunning() {
+		fmt.Println("Applying changes: Restarting background daemon...")
+		execPath, err := os.Executable()
+		if err == nil {
+			cmd := exec.Command(execPath, "daemon", "restart")
+			_ = cmd.Start()
+		}
+	} else {
+		fmt.Println("If the daemon is running, you may need to restart it for changes to apply.")
+	}
 }
 
 func init() {
@@ -195,6 +250,8 @@ func init() {
 	configCmd.Flags().StringVarP(&setValue, "set", "s", "", "New settings")
 	configCmd.Flags().IntVar(&removeIdx, "remove", 0, "Remove a device from the blacklist")
 	configCmd.Flags().BoolVarP(&reset, "reset", "r", false, "Reset to default value")
+	configCmd.Flags().BoolVar(&Enable, "enable", false, "Enable the feature")
+	configCmd.Flags().BoolVar(&Disable, "disable", false, "Disable the feature")
 	configCmd.Flags().StringVar(&Time, "time", "10:00", "Change the time")
 }
 
