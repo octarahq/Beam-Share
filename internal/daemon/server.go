@@ -13,6 +13,10 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"sync"
 	"time"
 )
@@ -143,19 +147,40 @@ func (s *DaemonServer) handleIncomingTCP(conn net.Conn) {
 	s.transfers[txID] = transfer
 	s.mu.Unlock()
 
-	action := <-transfer.Response
+	sizeMB := float64(meta.Size) / (1024 * 1024)
+	text := fmt.Sprintf("%s wants to send you %s (%.2f MB)\nID: %s", meta.SenderName, meta.Name, sizeMB, txID)
 
-	if action == "accept" {
-		_, _ = conn.Write([]byte("OK\n"))
-		config.AddTrustedDevices(trustedList, config.TrustedDevice{
-			Name:    meta.SenderName,
-			NodeId:  meta.SenderID,
-			AddedAt: time.Now(),
-		})
-		s.downloadFile(transfer)
-	} else {
+	cmd := exec.Command("notify-send",
+		"BeamShare: Incoming file!",
+		text,
+		"-i", "document-send",
+		"--action=accept=Accept",
+		"--action=reject=Refuse",
+	)
+	out, err := cmd.Output()
+	action := strings.TrimSpace(string(out))
+
+	if err != nil || action != "accept" {
 		s.refuseConnection(conn, txID)
+		return
 	}
+
+	_, _ = conn.Write([]byte("OK\n"))
+	config.AddTrustedDevices(trustedList, config.TrustedDevice{
+		Name:    meta.SenderName,
+		NodeId:  meta.SenderID,
+		AddedAt: time.Now(),
+	})
+
+	progCmd := exec.Command("notify-send", "-p",
+		"BeamShare: Downloading...",
+		fmt.Sprintf("Receiving %s...", meta.Name),
+		"-i", "document-receive",
+	)
+	progOut, _ := progCmd.Output()
+	notifID := strings.TrimSpace(string(progOut))
+
+	s.downloadFile(transfer, notifID)
 }
 
 func (s *DaemonServer) refuseConnection(conn net.Conn, txID string) {
@@ -166,7 +191,7 @@ func (s *DaemonServer) refuseConnection(conn net.Conn, txID string) {
 	s.mu.Unlock()
 }
 
-func (s *DaemonServer) downloadFile(t *PendingTransfer) {
+func (s *DaemonServer) downloadFile(t *PendingTransfer, notifID string) {
 	cfg := config.Load()
 	defer t.TCPConn.Close()
 
@@ -220,6 +245,62 @@ func (s *DaemonServer) downloadFile(t *PendingTransfer) {
 	s.mu.Lock()
 	delete(s.transfers, t.ID)
 	s.mu.Unlock()
+
+	ext := strings.ToLower(filepath.Ext(t.FileName))
+	isImage := false
+	isText := false
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp":
+		isImage = true
+	case ".txt", ".md", ".csv":
+		isText = true
+	}
+
+	var args []string
+	if notifID != "" {
+		args = append(args, "-r", notifID)
+	}
+	args = append(args, "BeamShare: Transfer complete!", fmt.Sprintf("File received: %s", t.FileName), "-i", "document-save")
+
+	if isImage {
+		args = append(args, "--action=gallery=Open in Gallery", "--action=folder=Show in files")
+	} else if isText {
+		args = append(args, "--action=file=Open file", "--action=folder=Show in files")
+	} else {
+		args = append(args, "--action=folder=Show in files")
+	}
+
+	go func() {
+		doneCmd := exec.Command("notify-send", args...)
+		doneOut, _ := doneCmd.Output()
+		doneAction := strings.TrimSpace(string(doneOut))
+
+		if doneAction == "gallery" || doneAction == "file" {
+			openFile(filePath)
+		} else if doneAction == "folder" {
+			openFolder(filepath.Dir(filePath))
+		}
+	}()
+}
+
+func openFile(path string) {
+	if runtime.GOOS == "windows" {
+		exec.Command("cmd", "/c", "start", path).Start()
+	} else if runtime.GOOS == "darwin" {
+		exec.Command("open", path).Start()
+	} else {
+		exec.Command("xdg-open", path).Start()
+	}
+}
+
+func openFolder(path string) {
+	if runtime.GOOS == "windows" {
+		exec.Command("explorer", path).Start()
+	} else if runtime.GOOS == "darwin" {
+		exec.Command("open", path).Start()
+	} else {
+		exec.Command("xdg-open", path).Start()
+	}
 }
 
 func (s *DaemonServer) registerService(port int) {

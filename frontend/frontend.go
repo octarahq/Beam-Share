@@ -1,20 +1,13 @@
 package frontend
 
 import (
-	"encoding/json"
-	"fmt"
 	"image/color"
 	_ "image/jpeg"
 	_ "image/png"
-	"net"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
-
-	"beam-share-cli/internal/config"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -82,172 +75,10 @@ type MessageIPC struct {
 	NodeId string `json:"node_id"`
 }
 
-func startTransferPolling(window fyne.Window) {
-	seen := make(map[string]bool)
-
-	go func() {
-		for {
-			time.Sleep(2 * time.Second)
-
-			conn, err := net.Dial("unix", "/tmp/beamshare.sock")
-			if err != nil {
-				continue
-			}
-
-			encoder := json.NewEncoder(conn)
-			decoder := json.NewDecoder(conn)
-
-			_ = encoder.Encode(MessageIPC{Event: "list_transfers"})
-			var list []PendingTransfer
-			_ = decoder.Decode(&list)
-			conn.Close()
-
-			for _, t := range list {
-				if seen[t.ID] {
-					continue
-				}
-				seen[t.ID] = true
-				handleTransfer(window, t)
-			}
-		}
-	}()
-}
-
-func handleTransfer(window fyne.Window, t PendingTransfer) {
-	go func() {
-		conn, err := net.Dial("unix", "/tmp/beamshare.sock")
-		if err != nil {
-			return
-		}
-		defer conn.Close()
-
-		encoder := json.NewEncoder(conn)
-		decoder := json.NewDecoder(conn)
-
-		_ = encoder.Encode(MessageIPC{Event: "attach_transfer", ID: t.ID})
-		var msg MessageIPC
-		_ = decoder.Decode(&msg)
-
-		if msg.Event == "error" {
-			return
-		}
-
-		done := make(chan bool)
-		var accepted bool
-
-		sizeMB := float64(msg.Size) / (1024 * 1024)
-		text := fmt.Sprintf("Incoming file: %s (%.2f MB)\nFrom: %s\n\nAccept?", msg.File, sizeMB, msg.From)
-
-		fyne.Do(func() {
-			dialog.ShowConfirm("Incoming transfer", text, func(b bool) {
-				accepted = b
-				done <- true
-			}, window)
-		})
-
-		<-done
-
-		val := "reject"
-		if accepted {
-			val = "accept"
-		}
-		_ = encoder.Encode(MessageIPC{Value: val})
-
-		if !accepted {
-			blDone := make(chan bool)
-			var blacklist bool
-			fyne.Do(func() {
-				dialog.ShowConfirm("Block Device", "Do you want to block this device?", func(b bool) {
-					blacklist = b
-					blDone <- true
-				}, window)
-			})
-			<-blDone
-
-			if blacklist {
-				bl := config.LoadBlackList()
-				config.AddDevice(bl, msg.From, msg.NodeId)
-			}
-		} else {
-			var finalMsg MessageIPC
-			_ = decoder.Decode(&finalMsg)
-
-			ext := strings.ToLower(filepath.Ext(msg.File))
-			isImage := false
-			isText := false
-			switch ext {
-			case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp":
-				isImage = true
-			case ".txt", ".md", ".csv":
-				isText = true
-			}
-
-			cfg := config.Load()
-			filePath := filepath.Join(cfg.DownloadPath, msg.File)
-
-			fyne.Do(func() {
-				lbl := canvas.NewText("File "+msg.File+" has been downloaded.", theme.ForegroundColor())
-				lbl.TextSize = 14
-
-				var content fyne.CanvasObject
-				var actions *fyne.Container
-
-				var d dialog.Dialog
-				closeBtn := widget.NewButton("Close", func() {
-					d.Hide()
-				})
-
-				if isImage {
-					img := canvas.NewImageFromFile(filePath)
-					img.FillMode = canvas.ImageFillContain
-					imgContainer := container.NewGridWrap(fyne.NewSize(200, 200), img)
-					content = container.NewVBox(lbl, imgContainer)
-
-					openGalleryBtn := widget.NewButton("Open in Gallery", func() {
-						openFile(filePath)
-					})
-					var moreBtn *widget.Button
-					moreBtn = widget.NewButtonWithIcon("", theme.MenuDropDownIcon(), func() {
-						menu := fyne.NewMenu("", fyne.NewMenuItem("Show in files", func() {
-							openFolder(filepath.Dir(filePath))
-						}))
-						popup := widget.NewPopUpMenu(menu, window.Canvas())
-						pos := fyne.CurrentApp().Driver().AbsolutePositionForObject(moreBtn)
-						pos.Y -= 32
-						popup.ShowAtPosition(pos)
-					})
-
-					secondBtn := container.NewHBox(openGalleryBtn, moreBtn)
-					actions = container.NewHBox(layout.NewSpacer(), closeBtn, secondBtn, layout.NewSpacer())
-
-				} else if isText {
-					content = lbl
-					copyBtn := widget.NewButton("Copy", func() {
-						b, _ := os.ReadFile(filePath)
-						window.Clipboard().SetContent(string(b))
-					})
-					actions = container.NewHBox(layout.NewSpacer(), closeBtn, copyBtn, layout.NewSpacer())
-				} else {
-					content = lbl
-					showBtn := widget.NewButton("Show in files", func() {
-						openFolder(filepath.Dir(filePath))
-					})
-					actions = container.NewHBox(layout.NewSpacer(), closeBtn, showBtn, layout.NewSpacer())
-				}
-
-				d = dialog.NewCustomWithoutButtons("Transfer complete", container.NewVBox(content, actions), window)
-				d.Show()
-			})
-		}
-	}()
-}
-
 func Run() {
 	myApp := app.New()
 	myWindow := myApp.NewWindow("Beam Share")
 	myWindow.Resize(fyne.NewSize(900, 600))
-
-	startTransferPolling(myWindow)
 
 	hostname, err := os.Hostname()
 	if err != nil {
