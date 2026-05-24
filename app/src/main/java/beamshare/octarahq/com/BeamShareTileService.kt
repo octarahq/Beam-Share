@@ -28,12 +28,12 @@ class BeamShareTileService : TileService() {
         
         if (mode == VisibilityMode.DISABLED) {
             tile.state = Tile.STATE_INACTIVE
-            tile.label = "Beam Share : Off"
+            tile.label = getString(R.string.disabled)
         } else {
             tile.state = Tile.STATE_ACTIVE
             tile.label = when(mode) {
-                VisibilityMode.TRUSTED -> "Beam Share : Confiance"
-                else -> "Beam Share : Ouvert"
+                VisibilityMode.TRUSTED -> getString(R.string.visible_to_trusted)
+                else -> getString(R.string.everyone)
             }
         }
         
