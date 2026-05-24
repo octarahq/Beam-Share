@@ -60,7 +60,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import java.io.File
 
-const val APP_VERSION = "0.1.0"
+const val APP_VERSION = "1.0.0"
 
 class MainActivity : ComponentActivity() {
     private lateinit var sendViewModel: SendViewModel
@@ -242,11 +242,11 @@ fun BeamShareApp(sendViewModel: SendViewModel, receiveViewModel: ReceiveViewMode
                     val context = LocalContext.current
                     val settingsManager = remember { SettingsManager(context) }
                     when (currentSubScreen) {
-                        "trusted" -> TrustedDevicesScreen(settingsManager, onBack = { currentSubScreen = null })
-                        "blacklist" -> BlacklistScreen(settingsManager, onBack = { currentSubScreen = null })
-                        "history" -> HistoryScreen(settingsManager, onBack = { currentSubScreen = null })
-                        "about" -> AboutScreen(onBack = { currentSubScreen = null })
-                        "privacy" -> PrivacyPolicyScreen(onBack = { currentSubScreen = null })
+                        "trusted" -> TrustedDevicesScreen(settingsManager)
+                        "blacklist" -> BlacklistScreen(settingsManager)
+                        "history" -> HistoryScreen(settingsManager)
+                        "about" -> AboutScreen()
+                        "privacy" -> PrivacyPolicyScreen()
                     }
                 } else {
                     AnimatedContent(
@@ -298,10 +298,10 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
 
     val cardColor = if (isSystemInDarkTheme()) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
 
-    var showNameEditor by remember { mutableStateOf(false) }
-    var showTransferMethodSelector by remember { mutableStateOf(false) }
-    var showThemeSelector by remember { mutableStateOf(false) }
-    var tempName by remember { mutableStateOf(deviceName) }
+    val showNameEditor = remember { mutableStateOf(false) }
+    val showTransferMethodSelector = remember { mutableStateOf(false) }
+    val showThemeSelector = remember { mutableStateOf(false) }
+    val tempName = remember { mutableStateOf(deviceName) }
 
     val folderPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
@@ -309,48 +309,48 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
         viewModel.updateDownloadUri(uri)
     }
 
-    if (showThemeSelector) {
+    if (showThemeSelector.value) {
         ThemeSelectorDialog(
             currentMode = themeMode,
-            onDismiss = { showThemeSelector = false },
+            onDismiss = { showThemeSelector.value = false },
             onSelect = {
                 viewModel.setThemeMode(it)
-                showThemeSelector = false
+                showThemeSelector.value = false
             }
         )
     }
 
-    if (showTransferMethodSelector) {
+    if (showTransferMethodSelector.value) {
         TransferMethodDialog(
             currentMethod = transferMethod,
-            onDismiss = { showTransferMethodSelector = false },
+            onDismiss = { showTransferMethodSelector.value = false },
             onSelect = {
                 viewModel.setTransferMethod(it)
-                showTransferMethodSelector = false
+                showTransferMethodSelector.value = false
             }
         )
     }
 
-    if (showNameEditor) {
+    if (showNameEditor.value) {
         AlertDialog(
-            onDismissRequest = { showNameEditor = false },
+            onDismissRequest = { showNameEditor.value = false },
             title = { Text(stringResource(R.string.device_name)) },
             text = {
                 TextField(
-                    value = tempName,
-                    onValueChange = { tempName = it },
+                    value = tempName.value,
+                    onValueChange = { tempName.value = it },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
             },
             confirmButton = {
                 Button(onClick = {
-                    viewModel.updateDeviceName(tempName)
-                    showNameEditor = false
+                    viewModel.updateDeviceName(tempName.value)
+                    showNameEditor.value = false
                 }) { Text(stringResource(R.string.save)) }
             },
             dismissButton = {
-                TextButton(onClick = { showNameEditor = false }) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = { showNameEditor.value = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -388,8 +388,8 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.clickable { 
-                tempName = deviceName
-                showNameEditor = true 
+                tempName.value = deviceName
+                showNameEditor.value = true 
             }
         ) {
             Text(
@@ -466,7 +466,7 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
                         ThemeMode.DARK -> stringResource(R.string.theme_dark)
                         ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
                     },
-                    onClick = { showThemeSelector = true }
+                    onClick = { showThemeSelector.value = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 SettingsItem(
@@ -478,7 +478,7 @@ fun SettingsScreen(onNavigate: (String) -> Unit, viewModel: ReceiveViewModel = v
                         TransferMethod.WIFI_DIRECT_HYBRID -> stringResource(R.string.method_wifi_direct)
                         TransferMethod.AUTO -> stringResource(R.string.method_auto)
                     },
-                    onClick = { showTransferMethodSelector = true }
+                    onClick = { showTransferMethodSelector.value = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 SettingsItem(
@@ -673,7 +673,6 @@ fun TransferMethodDialog(
         text = {
             Column {
                 TransferMethodOption(
-                    method = TransferMethod.AUTO,
                     title = stringResource(R.string.method_auto),
                     subtitle = stringResource(R.string.temp_everyone_desc),
                     icon = Icons.Default.AutoMode,
@@ -681,7 +680,6 @@ fun TransferMethodDialog(
                     onClick = { onSelect(TransferMethod.AUTO) }
                 )
                 TransferMethodOption(
-                    method = TransferMethod.WIFI_LOCAL_ONLY,
                     title = stringResource(R.string.method_wifi_local),
                     subtitle = "mDNS + Sockets",
                     icon = Icons.Default.Wifi,
@@ -689,7 +687,6 @@ fun TransferMethodDialog(
                     onClick = { onSelect(TransferMethod.WIFI_LOCAL_ONLY) }
                 )
                 TransferMethodOption(
-                    method = TransferMethod.WIFI_DIRECT_HYBRID,
                     title = stringResource(R.string.method_wifi_direct),
                     subtitle = stringResource(R.string.ready_to_send),
                     icon = Icons.Default.SwapCalls,
@@ -697,7 +694,6 @@ fun TransferMethodDialog(
                     onClick = { onSelect(TransferMethod.WIFI_DIRECT_HYBRID) }
                 )
                 TransferMethodOption(
-                    method = TransferMethod.BLUETOOTH_CLASSIC,
                     title = stringResource(R.string.method_bluetooth),
                     subtitle = "RFCOMM",
                     icon = Icons.Default.Bluetooth,
@@ -714,7 +710,6 @@ fun TransferMethodDialog(
 
 @Composable
 fun TransferMethodOption(
-    method: TransferMethod,
     title: String,
     subtitle: String,
     icon: ImageVector,
@@ -816,7 +811,7 @@ fun SettingsItem(icon: ImageVector, title: String, subtitle: String? = null, onC
 }
 
 @Composable
-fun TrustedDevicesScreen(settingsManager: SettingsManager, onBack: () -> Unit) {
+fun TrustedDevicesScreen(settingsManager: SettingsManager) {
     val trustedMap = remember { mutableStateMapOf<String, String?>().apply { putAll(settingsManager.getTrustedDevicesMap()) } }
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -854,7 +849,7 @@ fun TrustedDevicesScreen(settingsManager: SettingsManager, onBack: () -> Unit) {
 }
 
 @Composable
-fun BlacklistScreen(settingsManager: SettingsManager, onBack: () -> Unit) {
+fun BlacklistScreen(settingsManager: SettingsManager) {
     val blacklistedDevices = remember { mutableStateListOf<String>().apply { addAll(settingsManager.getBlacklistedDevices()) } }
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -887,7 +882,7 @@ fun BlacklistScreen(settingsManager: SettingsManager, onBack: () -> Unit) {
 }
 
 @Composable
-fun HistoryScreen(settingsManager: SettingsManager, onBack: () -> Unit) {
+fun HistoryScreen(settingsManager: SettingsManager) {
     var history by remember { mutableStateOf(settingsManager.getHistory()) }
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -939,7 +934,7 @@ fun HistoryScreen(settingsManager: SettingsManager, onBack: () -> Unit) {
 }
 
 @Composable
-fun PrivacyPolicyScreen(onBack: () -> Unit) {
+fun PrivacyPolicyScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1006,7 +1001,7 @@ fun PrivacySection(title: String, content: String) {
 }
 
 @Composable
-fun AboutScreen(onBack: () -> Unit) {
+fun AboutScreen() {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -1667,11 +1662,11 @@ fun FileSelectionCard(fileName: String?, isAnyActive: Boolean, onModify: () -> U
 fun IncomingTransferDialog(request: IncomingTransferRequest) {
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager(context) }
-    var showBlockConfirmation by remember { mutableStateOf(false) }
+    val showBlockConfirmation = remember { mutableStateOf(false) }
     
-    if (showBlockConfirmation) {
+    if (showBlockConfirmation.value) {
         AlertDialog(
-            onDismissRequest = { showBlockConfirmation = false },
+            onDismissRequest = { showBlockConfirmation.value = false },
             title = { Text(stringResource(R.string.block_device_title)) },
             text = { Text(stringResource(R.string.block_device_desc, request.senderName)) },
             confirmButton = {
@@ -1679,7 +1674,7 @@ fun IncomingTransferDialog(request: IncomingTransferRequest) {
                     onClick = {
                         settingsManager.blacklistDevice(request.senderId)
                         request.decline()
-                        showBlockConfirmation = false
+                        showBlockConfirmation.value = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
@@ -1689,7 +1684,7 @@ fun IncomingTransferDialog(request: IncomingTransferRequest) {
             dismissButton = {
                 TextButton(onClick = { 
                     request.decline()
-                    showBlockConfirmation = false 
+                    showBlockConfirmation.value = false 
                 }) {
                     Text(stringResource(R.string.refuse_only))
                 }
@@ -1848,7 +1843,7 @@ fun IncomingTransferDialog(request: IncomingTransferRequest) {
             if (request.status == TransferStatus.PENDING) {
                 TextButton(onClick = { 
                     if (!request.isTrusted) {
-                        showBlockConfirmation = true
+                        showBlockConfirmation.value = true
                     } else {
                         request.decline()
                     }
