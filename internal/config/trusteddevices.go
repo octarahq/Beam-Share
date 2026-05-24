@@ -38,6 +38,9 @@ func LoadTrustedDevices() TrustedDevices {
 }
 
 func AddTrustedDevices(list TrustedDevices, device TrustedDevice) error {
+	if IsTrusted(list, device.NodeId) {
+		return nil
+	}
 	list = append(list, device)
 
 	return SaveTrustedDevices(list)
